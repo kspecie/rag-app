@@ -2,10 +2,9 @@ import os
 from langchain.text_splitter import TokenTextSplitter
 from transformers import GPT2TokenizerFast
 
-def load_and_chunk(filename, chunk_size=300, chunk_overlap=50):
-    raw_folder = "/data/raw_data"
-    file_path = os.path.join(raw_folder, filename)
-    with open(file_path, "r", encoding="utf-8") as f:
+def load_and_chunk(file_absolute_path, chunk_size=300, chunk_overlap=50):
+    print(f"Attempting to loads file from: {file_absolute_path}")
+    with open(file_absolute_path, "r", encoding="utf-8") as f:
         raw_text = f.read()
     print(raw_text[:500])
 

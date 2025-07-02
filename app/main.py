@@ -1,14 +1,11 @@
-from data_preparation import load_and_chunk
+import os
 from vector_store import embed_and_store
 
 
 def main():
-    chunks = load_and_chunk("convo1.txt")
+    CONVO_FILE_PATH = "/rag_app/data/raw_data/convo1.txt"
+    embed_and_store(CONVO_FILE_PATH)
     
 if __name__ == "__main__":
-    # chunks = load_and_chunk("convo1.txt")
-    # print(f"Loaded {len(chunks)} chunks")
-    # print(chunks[0]) #print first chunk and metadata
-    embed_and_store("convo1.txt")
+   main()
     
-#this is just a test.

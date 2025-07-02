@@ -1,1 +1,8 @@
-
+langchain
+langchain-community
+langchain-huggingface
+transformers
+psycopg2-binary
+pgvector
+python-dotenv
+tiktoken
