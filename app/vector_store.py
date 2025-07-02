@@ -10,7 +10,7 @@ load_dotenv()
 
 def setup_vector_store():
     embeddings = HuggingFaceEndpointEmbeddings(
-        model="http://tei_service:9002",
+        model="http://tei_service:80",
         huggingfacehub_api_token=os.getenv("HF_TOKEN","")
     )
 
