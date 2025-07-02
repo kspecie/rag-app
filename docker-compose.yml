@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  rag-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rag-app-image
+    container_name: rag_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - /shared/models:/models
+    environment:
+      - TEI_URL=http://tei_service:80
+    depends_on:
+      - tei_service
+      - pgvector_db
+    working_dir: /app
+    command: ["/bin/bash"]
+    stdin_open: true
+    tty: true
+
+
+  # Text Embeddings Inference (TEI) Server (for converting text to numbers)
+  tei_service:
+    image: ghcr.io/huggingface/text-embeddings-inference:hpu-latest # Use Hugging Face's TEI image
+    container_name: tei_service
+    runtime: habana
+    volumes:
+      - /shared/models:/models # Mount shared models for TEI to access embedding models
+    environment:
+      # Specify an embedding model for TEI to load. Ensure this model is in /shared/models
+      # or will be cached there.
+      MODEL_ID: BAAI/bge-small-en-v1.5
+      HABANA_VISIBLE_DEVICES: "1"
+      OMPI_MCA_btl_vader_single_copy_mechanism: none
+      MAX_WARMUP_SEQUENCE_LENGTH: "512"
+    ports:
+      - "9002:80"
+    cap_add:
+      - SYS_NICE
+    ipc: host
+    restart: unless-stopped
+
+
+  pgvector_db:
+    image: pgvector/pgvector:pg16
+    container_name: kayla_postgres_vectordb
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${PGVECTOR_PORT}:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+    restart: unless-stopped   
+volumes:
+  pgvector_data:

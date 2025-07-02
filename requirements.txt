@@ -1,6 +1,1 @@
-uvicorn
-fastapi
-transformers
-optimum[habana]
-sentence-transformers
-torch
+

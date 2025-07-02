@@ -6,3 +6,4 @@ models/
 data/
 .env
 .DS_Store
+.graph_dumps
