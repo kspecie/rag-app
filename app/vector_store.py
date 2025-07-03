@@ -32,7 +32,7 @@ def setup_vector_store():
         collection_name="documents",
         connection_string=connection_string,
         embedding_function=embeddings,
-        pre_delete_collection=True
+        pre_delete_collection=False
     )
 
     return store
