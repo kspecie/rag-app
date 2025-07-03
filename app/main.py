@@ -65,6 +65,8 @@ import requests # New import
 from dotenv import load_dotenv
 from vector_store import embed_and_store # Still needed for ingestion
 from rag_pipeline import get_summarization_chain
+from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
@@ -76,16 +78,8 @@ ALLOWED_EXTENSIONS = ['.txt', '.md']
 CONVO_FILE_TO_SUMMARIZE = "/rag_app/data/raw_data/convo1.txt"
 
 # NEW: Endpoint for the OPEA Retriever Microservice
-RETRIEVER_ENDPOINT = "http://retriever:8000/retrieval" # As per OPEA README for pgvector
+RETRIEVER_ENDPOINT = "http://retriever:7000/v1/retrieval" # As per OPEA README for pgvector
 
-def get_files_to_ingest(directory):
-    files_to_process = []
-    for filename in os.listdir(directory):
-        file_path = os.path.join(directory, filename)
-        if os.path.isfile(file_path):
-            if any(file_path.lower().endswith(ext) for ext in ALLOWED_EXTENSIONS):
-                files_to_process.append(file_path)
-    return files_to_process
 
 def call_retriever_service(query_text: str, top_k: int = 5) -> str:
     """
@@ -128,17 +122,19 @@ def call_retriever_service(query_text: str, top_k: int = 5) -> str:
 
 
 def main():
-    # --- Data Ingestion Phase (Still crucial to build the KB for Retriever) ---
+    # --- Data Ingestion Phase (Now simplified to ingest only convo1.txt) ---
     print("\n--- Starting Document Ingestion ---")
-    files_to_ingest = get_files_to_ingest(KNOWLEDGE_BASE_DIR)
 
-    if not files_to_ingest:
-        print(f"No files found in {KNOWLEDGE_BASE_DIR} with extensions: {ALLOWED_EXTENSIONS}")
-        print("Please add your knowledge base documents to this directory.")
+    # Ingest ONLY the specific conversation file for this run
+    if os.path.exists(CONVO_FILE_TO_SUMMARIZE):
+        print(f"Attempting to embed and store: {CONVO_FILE_TO_SUMMARIZE}")
+        embed_and_store(CONVO_FILE_TO_SUMMARIZE)
+        print("--- Document Ingestion Complete ---")
     else:
-        for file_path in files_to_ingest:
-            print(f"Embedding and storing: {file_path}")
-            embed_and_store(file_path)
+        print(f"Error: {CONVO_FILE_TO_SUMMARIZE} not found at {os.path.abspath(CONVO_FILE_TO_SUMMARIZE)}.")
+        print("Please ensure 'convo1.txt' is located in the /rag_app/data/raw_data directory within the container.")
+        print("Document Ingestion Aborted.")
+        sys.exit(1) # Exit if the critical file isn't found
         print("--- Document Ingestion Complete ---")
 
     # --- Summarization Phase (Now leveraging Retriever) ---
@@ -169,3 +165,31 @@ def main():
             return
 
         summary_template = """Patient Name:
+        Date of Visit:
+        Chief Complaint:
+        Vital Signs:
+        Patient History (new symptoms/concerns):
+        Doctor's Assessment/Findings:
+        Diagnosis (if any mentioned):
+        Treatment Plan/Recommendations:
+        Follow-up Schedule:"""
+
+        summarization_chain = get_summarization_chain()
+
+        print("\nGenerating summary with Med42 using retrieved context. This may take a moment...")
+        generated_summary = summarization_chain.invoke({
+            "context": retrieved_context, # Pass the retrieved context
+            "template": summary_template
+        })
+        
+        print("\n--- Generated Summary ---")
+        print(generated_summary)
+        print("-------------------------")
+
+    except Exception as e:
+        print(f"Error during RAG summarization: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+   main()
