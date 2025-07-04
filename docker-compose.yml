@@ -17,9 +17,14 @@ services:
       HF_TOKEN: "${HF_TOKEN}"
       PG_CONNECTION_STRING: "${DATABASE_URL}"
     depends_on:
-      - tei_service
-      - pgvector_db
-      - tgi_service
+      tei_service:
+        condition: service_healthy
+      pgvector_db:
+        condition: service_healthy
+      tgi_service:
+        condition: service_healthy
+      retriever:
+        condition: service_healthy
     working_dir: /rag_app
     command: ["/bin/bash"]
     stdin_open: true
@@ -34,7 +39,7 @@ services:
     volumes:
       - /shared/models:/models # Mount shared models for TEI to access embedding models
     environment:
-      MODEL_ID: BAAI/bge-small-en-v1.5 #embedding model for TEI to load OR could be in /models/hub
+      MODEL_ID: BAAI/bge-base-en-v1.5 #embedding model for TEI to load OR could be in /models/hub
       HABANA_VISIBLE_DEVICES: "1"
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       MAX_WARMUP_SEQUENCE_LENGTH: "512"
@@ -73,25 +78,30 @@ services:
     container_name: kayla_postgres_vectordb
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "${PGVECTOR_PORT}:5432"
     volumes:
       - pgvector_data:/var/lib/postgresql/data
     restart: unless-stopped  
-
+#OPEA Retriever Microservice
   retriever:
     image: opea/retriever:latest
     container_name: opea_retriever
     ports:
-      - "8001:7000"
+      - "7000:7000"
+    expose:
+     - "7000"
     environment:
       PG_CONNECTION_STRING: "${DATABASE_URL}"
-      EMBEDDING_ENDPOINT: http://tei_service:8080/v1/embeddings
-      VECTOR_DB: pgvector
+      TEI_ENDPOINT: "http://tei_service:80/v1/embeddings"
       INDEX_NAME: documents
-      RETRIEVE_MODEL_ID: "BAAI/bge-small-en-v1.5"
+      RETRIEVE_MODEL_ID: "BAAI/bge-base-en-v1.5"
       RETRIEVER_COMPONENT_NAME: "OPEA_RETRIEVER_PGVECTOR"
-      LOG_LEVEL: DEBUG
+      COLLECTION_NAME: "documents"
+
+    ipc: host
     depends_on:
       - tei_service
       - pgvector_db
