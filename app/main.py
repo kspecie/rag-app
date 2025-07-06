@@ -147,7 +147,7 @@ def main():
 
     # Example query: You might ask the retriever to find relevant info for a clinical summary.
     # This query will be embedded by TEI and used to search PGVector.
-    query_for_retrieval = "Summarize the key medical details, patient history, and treatment plan from a doctor-patient conversation for a clinical report."
+    query_for_retrieval = "What is the patient's temperature and weight?"
 
     # You can optionally include part of the conversation itself if it's concise enough for an embedding query.
     # If your full conversation is very long, using a general query is better.

@@ -46,3 +46,5 @@ def embed_and_store(file_path):
     store = setup_vector_store()
     store.add_documents(docs)
 
+
+
