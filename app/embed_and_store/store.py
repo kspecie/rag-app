@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from langchain_postgres import PGVector
+from langchain_postgres import PGVectorStore
 
 
 load_dotenv()
