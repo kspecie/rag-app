@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from typing import List
-
 from langchain_community.document_loaders import DirectoryLoader, TextLoader, PyPDFLoader
 from langchain.schema import Document
 

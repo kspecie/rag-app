@@ -1,195 +1,87 @@
-# # app/main.py
-# import os
-# from dotenv import load_dotenv # Keep this for loading .env vars in main
-# from vector_store import embed_and_store
-# from rag_pipeline import get_summarization_chain # Import the new function
-
-# # Load environment variables from .env file
-# load_dotenv()
-
-# # Define constants
-# CONVO_FILE_PATH = "/rag_app/data/raw_data/convo1.txt"
-
-# def main():
-#     print(f"Attempting to load and process file from: {CONVO_FILE_PATH}")
-    
-#     # 1. Embed and store the conversation (only runs if needed, based on pre_delete_collection)
-#     embed_and_store(CONVO_FILE_PATH)
-#     print("Conversation embedded and stored successfully (if not already present).")
-
-#     # 2. Load the full conversation text for summarization
-#     try:
-#         with open(CONVO_FILE_PATH, 'r') as f:
-#             full_conversation_text = f.read()
-#     except FileNotFoundError:
-#         print(f"Error: Conversation file not found at {CONVO_FILE_PATH}")
-#         return
-
-#     # Define the summarization template here, as it's needed for the invoke call
-#     summary_template = """Patient Name:
-# Date of Visit:
-# Chief Complaint:
-# Vital Signs:
-# Patient History (new symptoms/concerns):
-# Doctor's Assessment/Findings:
-# Treatment Plan/Recommendations:
-# Follow-up Schedule:"""
-
-#     # 3. Get the summarization chain from rag_pipeline.py
-#     summarization_chain = get_summarization_chain()
-
-#     print("\nGenerating summary with Med42. This may take a moment...")
-#     try:
-#         # 4. Invoke the summarization chain
-#         generated_summary = summarization_chain.invoke({
-#             "conversation": full_conversation_text,
-#             "template": summary_template # Pass the template directly here
-#         })
-        
-#         print("\n--- Generated Summary ---")
-#         print(generated_summary)
-#         print("-------------------------")
-
-#     except Exception as e:
-#         print(f"Error generating summary: {e}")
-#         import traceback
-#         traceback.print_exc() # Print full traceback for debugging
-
-# if __name__ == "__main__":
-#    main()
-
-
-# app/main.py
 import os
-import requests # New import
+import sys
+import pysqlite3
 from dotenv import load_dotenv
-from vector_store import embed_and_store # Still needed for ingestion
-from rag_pipeline import get_summarization_chain
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+# Monkey-patch sqlite3 before anything else that might import it
+sys.modules["sqlite3"] = pysqlite3
+sys.modules["_sqlite3"] = pysqlite3.dbapi2
 
 load_dotenv()
 
-# --- Configuration ---
-KNOWLEDGE_BASE_DIR = "/rag_app/data/raw_data"
-ALLOWED_EXTENSIONS = ['.txt', '.md']
+from app.data_ingestion.document_loader import load_documents
+from app.data_ingestion.split_and_chunk import split_documents_into_chunks
+from app.embed_and_store.embed import create_embeddings
+from app.embed_and_store.store import store_chunks_in_chroma
 
-# The specific conversation file we want to summarize (will be part of context)
-CONVO_FILE_TO_SUMMARIZE = "/rag_app/data/raw_data/convo1.txt"
-
-# NEW: Endpoint for the OPEA Retriever Microservice
-RETRIEVER_ENDPOINT = "http://retriever:7000/v1/retrieval" # As per OPEA README for pgvector
-
-
-def call_retriever_service(query_text: str, top_k: int = 5) -> str:
+def run_ingestion_pipeline(raw_data_dir: str):
     """
-    Calls the OPEA Retriever Microservice to get relevant context.
+    Runs the document ingestion pipeline: loads, splits, and chunks documents.
     """
-    payload = {
-        "text": query_text,
-        "size": top_k
-    }
-    headers = {"Content-Type": "application/json"}
+    print("\n--- Starting Document Ingestion Pipeline ---")
 
-    print(f"Calling Retriever Service at {RETRIEVER_ENDPOINT} with query: '{query_text[:50]}...'")
-    try:
-        response = requests.post(RETRIEVER_ENDPOINT, json=payload, headers=headers, timeout=60)
-        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+    # 1. Load Documents
+    print("Step 1: Loading documents...")
+    documents = load_documents(raw_data_dir)
+    if not documents:
+        print("No documents loaded. Exiting ingestion pipeline.")
+        return [] # Return an empty list if no docs
 
-        retrieved_data = response.json()
+    # 2. Split and Chunk Documents
+    print("Step 2: Splitting documents into chunks...")
+    chunks = split_documents_into_chunks(documents)
+    if not chunks:
+        print("No chunks generated. Exiting ingestion pipeline.")
+        return []
 
-        # The OPEA Retriever typically returns a list of dictionaries with 'text' field
-        # e.g., {"retrieved": [{"text": "chunk1", "score": 0.9}, {"text": "chunk2", "score": 0.8}]}
-        context_docs = [doc["text"] for doc in retrieved_data.get("retrieved", [])]
+    print(f"Ingestion pipeline complete. Generated {len(chunks)} chunks.")
+    return chunks
 
-        if not context_docs:
-            print("Warning: Retriever returned no documents for the query.")
-            return "No relevant context found."
+def run_embedding_and_storage_pipeline(chunks: list):
+    """
+    Generates embeddings for chunks and stores them in the vector database.
+    """
+    print("\n--- Starting Embedding and Storage Pipeline ---")
 
-        # Join the retrieved chunks into a single string to pass as context
-        return "\n\n".join(context_docs)
+    # 1. Create Embeddings
+    print("Step 1: Generating embeddings for chunks...")
+    # This function will call your tei_service
+    embedded_chunks = create_embeddings(chunks, os.getenv("TEI_SERVICE_URL"))
+    if not embedded_chunks:
+        print("No embeddings generated. Exiting embedding pipeline.")
+        return
 
-    except requests.exceptions.ConnectionError as e:
-        print(f"Error connecting to Retriever Service at {RETRIEVER_ENDPOINT}: {e}")
-        print("Please ensure the 'retriever' Docker container is running and accessible.")
-        raise
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error from Retriever Service: {e.response.status_code} - {e.response.text}")
-        raise
-    except Exception as e:
-        print(f"An unexpected error occurred while calling Retriever Service: {e}")
-        raise
+    # 2. Store Embeddings in Vector DB
+    print("Step 2: Storing embeddings and chunks in ChromaDB...")
+    # This function will call your chromadb_service
+    store_chunks_in_chroma(embedded_chunks, os.getenv("CHROMADB_SERVICE_URL"), os.getenv("CHROMA_COLLECTION_NAME"))
+    print("Embedding and Storage pipeline complete.")
 
 
 def main():
-    # --- Data Ingestion Phase (Now simplified to ingest only convo1.txt) ---
-    print("\n--- Starting Document Ingestion ---")
+    """
+    Main function to orchestrate the RAG application.
+    """
+    load_dotenv()
 
-    # Ingest ONLY the specific conversation file for this run
-    if os.path.exists(CONVO_FILE_TO_SUMMARIZE):
-        print(f"Attempting to embed and store: {CONVO_FILE_TO_SUMMARIZE}")
-        embed_and_store(CONVO_FILE_TO_SUMMARIZE)
-        print("--- Document Ingestion Complete ---")
+    RAW_DATA_DIRECTORY = os.getenv("RAW_DATA_DIRECTORY", "/rag_app/data/raw_data")
+    
+    # --- Ingestion Pipeline ---
+    processed_chunks = run_ingestion_pipeline(RAW_DATA_DIRECTORY)
+    
+    if processed_chunks:
+        # --- Embedding and Storage Pipeline ---
+        run_embedding_and_storage_pipeline(processed_chunks)
+
+        print("\n--- All data indexed. Ready for Retrieval and Generation ---")
+
+        # --- Retrieval and Generation Pipeline (next major phase) ---
+        # query = "What is the main diagnosis in the soap note?"
+        # relevant_chunks = retrieve_relevant_chunks(query, os.getenv("CHROMA_DB_HOST"))
+        # summary = generate_summary(relevant_chunks, query, os.getenv("TGI_SERVICE_URL"))
+        print("Querying and Summary generation step would go here.")
     else:
-        print(f"Error: {CONVO_FILE_TO_SUMMARIZE} not found at {os.path.abspath(CONVO_FILE_TO_SUMMARIZE)}.")
-        print("Please ensure 'convo1.txt' is located in the /rag_app/data/raw_data directory within the container.")
-        print("Document Ingestion Aborted.")
-        sys.exit(1) # Exit if the critical file isn't found
-        print("--- Document Ingestion Complete ---")
-
-    # --- Summarization Phase (Now leveraging Retriever) ---
-    print(f"\n--- Starting Summarization with RAG ---")
-
-    # For summarization, the query sent to the Retriever needs to guide it
-    # to pull relevant parts of the conversation (and potentially guidelines).
-    # A good query could be a concise prompt related to the summary task.
-    # Ensure CONVO_FILE_TO_SUMMARIZE is already ingested into the KB.
-
-    # Example query: You might ask the retriever to find relevant info for a clinical summary.
-    # This query will be embedded by TEI and used to search PGVector.
-    query_for_retrieval = "What is the patient's temperature and weight?"
-
-    # You can optionally include part of the conversation itself if it's concise enough for an embedding query.
-    # If your full conversation is very long, using a general query is better.
-    # For simplicity, we'll use a generic query that should hopefully hit chunks of convo1.txt
-
-    try:
-        # Call the Retriever Microservice to get relevant context chunks
-        retrieved_context = call_retriever_service(query_for_retrieval, top_k=5) # Get top 5 relevant chunks
-        print("\n--- Retrieved Context ---")
-        print(retrieved_context)
-        print("-------------------------")
-
-        if "No relevant context found." in retrieved_context:
-            print("Cannot summarize due to lack of relevant context from Retriever.")
-            return
-
-        summary_template = """Patient Name:
-        Date of Visit:
-        Chief Complaint:
-        Vital Signs:
-        Patient History (new symptoms/concerns):
-        Doctor's Assessment/Findings:
-        Diagnosis (if any mentioned):
-        Treatment Plan/Recommendations:
-        Follow-up Schedule:"""
-
-        summarization_chain = get_summarization_chain()
-
-        print("\nGenerating summary with Med42 using retrieved context. This may take a moment...")
-        generated_summary = summarization_chain.invoke({
-            "context": retrieved_context, # Pass the retrieved context
-            "template": summary_template
-        })
-        
-        print("\n--- Generated Summary ---")
-        print(generated_summary)
-        print("-------------------------")
-
-    except Exception as e:
-        print(f"Error during RAG summarization: {e}")
-        import traceback
-        traceback.print_exc()
+        print("No chunks to process. RAG pipeline halted.")
 
 if __name__ == "__main__":
-   main()
+    main()

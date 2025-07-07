@@ -13,14 +13,18 @@ services:
       - .:/rag_app
       - /shared/models:/models
     environment:
-      TEI_URL: ${TEI_URL}
+      TEI_URL: ${TEI_API_URL}
       HF_TOKEN: "${HF_TOKEN}"
-      PG_CONNECTION_STRING: "${DATABASE_URL}"
+      CHROMA_HOST: "chromadb_service"
+      CHROMA_PORT: "8000"
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+
     depends_on:
       - tei_service
-      - pgvector_db
+      - chromadb_service
       - tgi_service
-      - retriever
+
  
     working_dir: /rag_app
     command: ["/bin/bash"]
@@ -41,7 +45,7 @@ services:
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       MAX_WARMUP_SEQUENCE_LENGTH: "512"
     ports:
-      - "9002:80"
+      - "8001:80"
     cap_add:
       - SYS_NICE
     ipc: host
@@ -63,44 +67,44 @@ services:
       MAX_INPUT_TOKENS: "1024"
       MAX_TOTAL_TOKENS: "2048"
     ports:
-      - "8080:80"
+      - "8002:80"
     cap_add:
       - SYS_NICE
     ipc: host
     restart: unless-stopped
 
-#PGVector Database Container
-  pgvector_db:
-    image: pgvector/pgvector:pg16
-    container_name: kayla_postgres_vectordb
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
+  #ChromaDB Vector
+  chromadb_service:
+    image: chromadb/chroma:latest
+    container_name: chromadb_service
     ports:
-      - "${PGVECTOR_PORT}:5432"
+      - "8003:8000"
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
     volumes:
-      - pgvector_data:/var/lib/postgresql/data
-    restart: unless-stopped  
-#OPEA Retriever Microservice
-  retriever:
-    image: opea/retriever:latest
-    container_name: opea_retriever
-    ports:
-      - "7000:7000"
-    expose:
-     - "7000"
-    environment:
-      PG_CONNECTION_STRING: "${DATABASE_URL}"
-      TEI_ENDPOINT: "http://tei_service:80/v1/embeddings"
-      INDEX_NAME: documents
-      RETRIEVE_MODEL_ID: "BAAI/bge-base-en-v1.5"
-      RETRIEVER_COMPONENT_NAME: "OPEA_RETRIEVER_PGVECTOR"
-      COLLECTION_NAME: "documents"
+      - chroma_data:/chroma/chroma
 
-    ipc: host
-    depends_on:
-      - tei_service
-      - pgvector_db
+  # #OPEA Retriever Microservice
+  # retriever:
+  #   image: opea/retriever:latest
+  #   container_name: opea_retriever
+  #   ports:
+  #     - "7000:7000"
+  #   expose:
+  #    - "7000"
+  #   environment:
+  #     PG_CONNECTION_STRING: "${DATABASE_URL}"
+  #     TEI_ENDPOINT: "http://tei_service:80/v1/embeddings"
+  #     INDEX_NAME: documents
+  #     RETRIEVE_MODEL_ID: "BAAI/bge-base-en-v1.5"
+  #     RETRIEVER_COMPONENT_NAME: "OPEA_RETRIEVER_PGVECTOR"
+  #     COLLECTION_NAME: "documents"
+
+  #   ipc: host
+  #   depends_on:
+  #     - tei_service
+
 volumes:
-  pgvector_data:
+  chroma_data:

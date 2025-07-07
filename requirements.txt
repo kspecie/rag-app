@@ -1,10 +1,6 @@
-langchain
-langchain-core
 langchain-community
-langchain-huggingface
-transformers
-psycopg2-binary
-pgvector
-python-dotenv
-tiktoken
+langchain-text-splitters
 pypdf
+requests
+chromadb
+python-dotenv

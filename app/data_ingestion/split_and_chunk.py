@@ -1,5 +1,4 @@
 from typing import List
-
 from langchain.schema import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from .document_loader import load_documents
