@@ -1,8 +1,7 @@
-langchain
 langchain-community
-langchain-huggingface
-transformers
-psycopg2-binary
-pgvector
+langchain-text-splitters
+pypdf
+requests
+chromadb
 python-dotenv
-tiktoken
+unstructured[local-inference,pdf,docx,xlsx,pptx,markdown]
