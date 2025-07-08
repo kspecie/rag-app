@@ -1,4 +1,5 @@
 services:
+#RAG Application 
   rag-app:
     build:
       context: .
@@ -40,7 +41,7 @@ services:
     volumes:
       - /shared/models:/models # Mount shared models for TEI to access embedding models
     environment:
-      MODEL_ID: BAAI/bge-base-en-v1.5 #embedding model for TEI to load OR could be in /models/hub
+      MODEL_ID: BAAI/bge-small-en-v1.5 #embedding model for TEI to load OR could be in shared/models/hub
       HABANA_VISIBLE_DEVICES: "1"
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       MAX_WARMUP_SEQUENCE_LENGTH: "512"
@@ -85,26 +86,6 @@ services:
       - ANONYMIZED_TELEMETRY=FALSE
     volumes:
       - chroma_data:/chroma/chroma
-
-  # #OPEA Retriever Microservice
-  # retriever:
-  #   image: opea/retriever:latest
-  #   container_name: opea_retriever
-  #   ports:
-  #     - "7000:7000"
-  #   expose:
-  #    - "7000"
-  #   environment:
-  #     PG_CONNECTION_STRING: "${DATABASE_URL}"
-  #     TEI_ENDPOINT: "http://tei_service:80/v1/embeddings"
-  #     INDEX_NAME: documents
-  #     RETRIEVE_MODEL_ID: "BAAI/bge-base-en-v1.5"
-  #     RETRIEVER_COMPONENT_NAME: "OPEA_RETRIEVER_PGVECTOR"
-  #     COLLECTION_NAME: "documents"
-
-  #   ipc: host
-  #   depends_on:
-  #     - tei_service
 
 volumes:
   chroma_data:

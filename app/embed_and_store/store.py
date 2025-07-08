@@ -36,11 +36,11 @@ def store_chunks_in_chroma(
 
     except Exception as e:
         print(f"Error storing chunks in ChromaDB: {e}")
-        # You might want to log this error and potentially re-try or alert
+
         
-if __name__ == "__main__":
-    print("This module is meant to be imported and used by main.py or other pipeline scripts.")
-    print("Please run main.py or add dummy data for direct testing.")
+# if __name__ == "__main__":
+#     print("This module is meant to be imported and used by main.py or other pipeline scripts.")
+#     print("Please run main.py or add dummy data for direct testing.")
     # Example dummy usage:
     # dummy_embedded_chunks = [
     #     {"text": "Text content 1", "metadata": {"page": 1}, "embedding": [0.1, 0.2, ...]},

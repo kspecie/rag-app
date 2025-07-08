@@ -40,6 +40,4 @@ def load_documents(directory_path: str) -> List[Document]:
     return documents
 
 if __name__ == "__main__":
-    # This block runs only when the script is executed directly
-    # Load documents
     loaded_docs = load_documents("/rag_app/data/raw_data")

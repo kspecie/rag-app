@@ -1,4 +1,3 @@
-# app/embed_and_store/embed.py
 from typing import List, Dict, Any
 from langchain.schema import Document
 import requests
@@ -37,16 +36,16 @@ def create_embeddings(chunks: List[Document], tei_service_url: str) -> List[Dict
 
     except requests.exceptions.RequestException as e:
         print(f"Error connecting to TEI service at {tei_service_url}: {e}")
-        # Consider more robust error handling / retry logic here
         return []
+
     except Exception as e:
         print(f"An unexpected error occurred during embedding: {e}")
         return []
 
-if __name__ == "__main__":
-    # This block won't run directly without some dummy data
-    print("This module is meant to be imported and used by main.py or other pipeline scripts.")
-    print("Please run main.py or add dummy data for direct testing.")
+# if __name__ == "__main__":
+#     # This block won't run directly without some dummy data
+#     print("This module is meant to be imported and used by main.py or other pipeline scripts.")
+#     print("Please run main.py or add dummy data for direct testing.")
     # Example dummy usage:
     # from langchain.schema import Document
     # dummy_chunks = [

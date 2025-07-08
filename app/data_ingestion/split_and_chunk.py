@@ -28,7 +28,7 @@ def split_documents_into_chunks(
     print(f"Original documents split into {len(all_splits)} chunks.")
     return all_splits
 
-# This block allows you to test the splitting functionality independently
+
 if __name__ == "__main__":
    
     if loaded_docs:
