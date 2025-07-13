@@ -45,13 +45,14 @@ services:
       HABANA_VISIBLE_DEVICES: "1"
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       MAX_WARMUP_SEQUENCE_LENGTH: "512"
+      DEVICE: hpu
     ports:
-      - "8001:80"
+      - "8004:80"
     cap_add:
       - SYS_NICE
     ipc: host
     restart: unless-stopped
-
+    
 #Text Generation Inference (TGI)
   tgi_service:
     image: ghcr.io/huggingface/tgi-gaudi:2.3.1
