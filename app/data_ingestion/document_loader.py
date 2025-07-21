@@ -40,4 +40,4 @@ def load_documents(directory_path: str) -> List[Document]:
     return documents
 
 if __name__ == "__main__":
-    loaded_docs = load_documents("/rag_app/data/raw_data")
+    loaded_docs = load_documents("/rag-app/data/raw_data")

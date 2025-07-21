@@ -3,7 +3,7 @@ FROM vault.habana.ai/gaudi-docker/1.21.0/rhel9.2/habanalabs/pytorch-installer-2.
 ENV HABANA_VISIBLE_DEVICES=all
 ENV OMPI_MCA_btl_vader_single_copy_mechanism=none
 
-WORKDIR /rag_app
+WORKDIR /rag-app
 
 # Install dependencies including sqlite-devel from system packages
 RUN yum install -y \

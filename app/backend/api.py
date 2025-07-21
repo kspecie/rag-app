@@ -9,7 +9,7 @@ load_dotenv()
 
 router = APIRouter()
 
-RAW_DATA_DIRECTORY = os.getenv("RAW_DATA_DIRECTORY", "/rag_app/data/raw_data")
+RAW_DATA_DIRECTORY = os.getenv("RAW_DATA_DIRECTORY", "/rag-app/data/raw_data")
 
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...)):

@@ -123,6 +123,14 @@ Mr. Harrison: "Well, since you ask, I've also had a few episodes of heartburn la
 Dr. Evans: "Thanks for sharing that, Mr. Harrison. It's helpful to get a full picture. For the heartburn, are there any specific foods that trigger it? And how often would you say these episodes occur?"
 Mr. Harrison: "Mostly spicy food, or really rich, fatty meals. And it's probably about once or twice a week, sometimes more if I'm not careful with what I eat."
 Dr. Evans: "Understood. Okay, let's do a thorough physical examination first. I'll listen to your heart and lungs, check your throat, and feel your abdomen. Nurse Sarah, could you hand me the stethoscope, please?"
+Nurse Sarah: "Of course, Doctor." (Hands the stethoscope to Dr. Evans.)
+(Dr. Evans performs the examination.)
+Dr. Evans: "Alright, everything sounds clear in your lungs, and your heart rhythm is regular. Your throat looks fine too. Based on what you've described, the tiredness and dry cough could be due to a few things, including post-nasal drip or even just the seasonal changes we've had recently. For the heartburn, we can look at some dietary adjustments and potentially some over-the-counter remedies first. We might also consider some blood tests just to rule out any underlying causes for the fatigue, and perhaps a chest X-ray if the cough persists."
+Mr. Harrison: "That sounds reasonable, Doctor."
+Dr. Evans: "Great. Nurse Sarah will give you some information on managing heartburn with diet, and we'll schedule those blood tests for you. She'll also explain how to collect a sputum sample for the cough, just in case, though I don't anticipate anything serious."
+Nurse Sarah: "Absolutely, Mr. Harrison. I have a few pamphlets here on dietary changes for heartburn, and I can book your blood test appointment for next week. I'll also go over the instructions for the sputum sample with you before you leave."
+Dr. Evans: "Perfect. Mr. Harrison, we'll review all the results once they come in, and then we can discuss the next steps. Does that sound good to you?"
+Mr. Harrison: "Yes, Dr. Evans, that sounds very thorough. Thank you both."
 """     
         print("\n--- Processing new transcribed conversation ---")
         _ = run_retrieval_and_generation_pipeline(sample_conversation) 
