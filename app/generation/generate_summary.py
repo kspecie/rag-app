@@ -41,8 +41,14 @@ def generate_summary(
     prompt = f"""
     You are an AI assistant specialized in medical summarization. Your task is to generate a concise, templated clinical summary based on the provided patient conversation (context) and the user's query.
 
-    Summary Template to follow:
+    **Example of desired output format:**
+    Presenting complaint: Patient reports a cough.
+    History of presenting complaint: Cough started 3 days ago, non-productive.
+    Family history: High cholesterol runs in the family.
+    Past surgical history: Information not provided.
 
+    Template to follow is below
+    
     Presenting complaint:
     History of presenting complaint:
     Review of systems:
@@ -54,13 +60,18 @@ def generate_summary(
     Observation:
     Assessment:
     Clinical impression/Differential diagnosis:
-    Plan:
+    Plan of Action:
 
     **Patient Doctor Conversation:**
     {transcribed_conversation}
     {context}
 
-    Please generate the clinical summary. Do not make up any information. If there is no relevant information, ouput the section title, but leave the value blank.
+    Please generate the clinical summary. Do not make up any information.
+    If there is no relevant information for a section, you MUST output the section title followed by "Information not provided.".
+    For example, if no information is available for "Past surgical history", you would write:
+    Past surgical history: Information not provided.
+
+    Ensure ALL section titles from the template are present in your final summary.
     """
 
     headers = {"Content-Type": "application/json"}
