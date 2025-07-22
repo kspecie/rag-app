@@ -5,8 +5,8 @@ from .document_loader import load_documents
 
 def split_documents_into_chunks(
     documents: List[Document],
-    chunk_size: int = 1000,
-    chunk_overlap: int = 200,
+    chunk_size: int = 550,
+    chunk_overlap: int = 150,
     add_start_index: bool = True
 ) -> List[Document]:
     """
