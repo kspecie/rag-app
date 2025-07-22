@@ -6,7 +6,7 @@ def generate_summary(
     transcribed_conversation: str,
     relevant_knowledge_chunks: List[Dict[str, Any]],
     tgi_service_url: str,
-    max_new_tokens: int = 100,
+    max_new_tokens: int = 3000,
     temperature: float = 0.2
 ) -> str:
     """

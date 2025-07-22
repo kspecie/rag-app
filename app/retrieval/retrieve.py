@@ -6,7 +6,7 @@ def retrieve_relevant_chunks(
     query: str,
     chroma_db_url: str,
     collection_name: str,
-    n_results: int = 2
+    n_results: int = 10
 ) -> List[Dict[str, Any]]:
     """
     Retrieves the top_n most relevant chunks from ChromaDB for a given query.

@@ -67,13 +67,13 @@ def run_retrieval_and_generation_pipeline(transcribed_conversation: str):
     print("\n--- Starting Retrieval and Generation Pipeline ---")
 
     # 5. Retrieve Relevant Chunks
-    print(f"Step 5: Retrieving relevant chunks for query: '{transcribed_conversation}'")
+    print(f"Step 5: Retrieving relevant chunks for query")
     relevant_chunks = retrieve_relevant_chunks(transcribed_conversation, os.getenv("CHROMADB_SERVICE_URL"), os.getenv("CHROMA_COLLECTION_NAME"))
     if not relevant_chunks:
         print("No relevant chunks found. Cannot generate summary.")
         return None
 
-    print(f"Found {len(relevant_chunks)} relevant chunks.")
+    print(f"Found {len(relevant_chunks)} relevant chunks. These are the relevant chunks: '{relevant_chunks}'")
 
     # 6. Generate Summary
     print("Step 6: Generating summary...")
