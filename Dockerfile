@@ -24,4 +24,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8000
 
-CMD ["python", "app/main.py"]
+# CMD ["python", "app/main.py"]
+
+
+# Command to run the FastAPI application using Uvicorn
+# This now points to 'server:app' inside the 'app' package
+# CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
+# ENTRYPOINT ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/bin/bash", "-c", "uvicorn app.server:app --host 0.0.0.0 --port 8000"]
