@@ -2,7 +2,7 @@ import os
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
 from typing import List
 
-from app.core.pipeline import run_ingestion_pipeline, run_embedding_and_storage_pipeline # Import your pipeline functions
+from app.core.pipeline import run_ingestion_pipeline, run_embedding_and_storage_pipeline
 
 router = APIRouter(
     prefix="/documents", # All endpoints in this router will start with /documents

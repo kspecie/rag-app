@@ -1,8 +1,5 @@
-# app/api/summaries.py
-
 from fastapi import APIRouter, HTTPException, status
-
-from app.core.pipeline import run_retrieval_and_generation_pipeline # Import your pipeline function
+from app.core.pipeline import run_retrieval_and_generation_pipeline 
 
 router = APIRouter(
     prefix="/summaries", # All endpoints in this router will start with /summaries

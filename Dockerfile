@@ -31,4 +31,5 @@ EXPOSE 8000
 # This now points to 'server:app' inside the 'app' package
 # CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
 # ENTRYPOINT ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
-ENTRYPOINT ["/bin/bash", "-c", "uvicorn app.server:app --host 0.0.0.0 --port 8000"]
+#ENTRYPOINT ["/bin/bash", "-c", "uvicorn app.server:app --host 0.0.0.0 --port 8000"]
+ENTRYPOINT ["/bin/bash", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000"]
