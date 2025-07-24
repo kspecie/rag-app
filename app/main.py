@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 from typing import List
+from pydantic import BaseModel
 
 # Import the higher-level pipeline functions from app.core.pipeline
 from app.core.pipeline import run_ingestion_pipeline, run_embedding_and_storage_pipeline, run_retrieval_and_generation_pipeline
@@ -118,19 +119,23 @@ async def upload_documents(files: List[UploadFile] = File(...), api_key: str = D
             shutil.rmtree(temp_dir)
             logger.info(f"Cleaned up temporary directory: {temp_dir}")
 
+
+# --- NEW: Pydantic model for summarization request body ---
+class SummarizeRequest(BaseModel):
+    text: str
+
 @app.post("/summaries/generate/", summary="Generate a clinical summary from conversation")
 async def generate_clinical_summary(
-    transcribed_conversation: str = Query(
-        ...,
-        description="The transcribed medical conversation to summarize."
-    ),
+    request: SummarizeRequest, # <--- CHANGED: Expecting a JSON body
     api_key: str = Depends(get_api_key)
 ):
     """
     Generates a clinical summary based on a provided transcribed medical conversation.
     It uses RAG to retrieve relevant context from uploaded documents before summarization.
     """
-    if not transcribed_conversation:
+    transcribed_conversation = request.text
+
+    if not transcribed_conversation.strip():
         raise HTTPException(status_code=400, detail="Transcribed conversation cannot be empty.")
 
     try:
