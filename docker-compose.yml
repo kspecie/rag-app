@@ -14,6 +14,7 @@ services:
       - .:/rag-app
       - /shared/models:/models
     environment:
+      API_KEY: ${API_KEY}
       TEI_URL: ${TEI_SERVICE_URL}
       HF_TOKEN: "${HF_TOKEN}"
       CHROMA_HOST: "chromadb_service"
