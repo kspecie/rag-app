@@ -1,4 +1,3 @@
-// src/components/DocumentUploader.tsx
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
@@ -55,7 +54,6 @@ export function DocumentUploader({
     setUploadProgress(0);
 
     const formData = new FormData();
-    // !!! CORRECTED: Append each file under the 'files' field name !!!
     files.forEach(file => {
         formData.append("files", file);
     });
@@ -78,17 +76,13 @@ export function DocumentUploader({
       }
 
       const result = await response.json();
-      // !!! CORRECTED: Iterate over the 'uploaded_files' array from backend response !!!
       if (result.uploaded_files && Array.isArray(result.uploaded_files)) {
           result.uploaded_files.forEach((fileDetail: { id: string; filename: string }) => {
               onUploadSuccess({ id: fileDetail.id, filename: fileDetail.filename });
           });
           toast.success(`${result.uploaded_files.length} file(s) processed and added to ChromaDB!`);
       } else {
-          // Fallback if backend doesn't return detailed info but still succeeded
           toast.success("Files uploaded successfully, but no detailed info returned.");
-          // You might still call onUploadSuccess with generic info if you want to display
-          // something in the table for each original file.
           files.forEach(file => {
               onUploadSuccess({ id: Date.now().toString() + file.name, filename: file.name });
           });

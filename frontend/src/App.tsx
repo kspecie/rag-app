@@ -16,7 +16,6 @@ function App() {
 
         <main className="flex-grow">
           <Routes>
-            {/* Define your routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/summarise" element={<SummarisePage />} />
