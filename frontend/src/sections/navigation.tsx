@@ -1,25 +1,35 @@
-import { NavigationMenu, NavigationMenuList, NavigationMenuLink, NavigationMenuContent, NavigationMenuItem, NavigationMenuTrigger } from "../components/ui/navigation-menu"
+import { Link } from 'react-router-dom'; 
+
+import {
+  NavigationMenu,
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationNavLink,
+} from "../components/ui/navigation-menu"
 
 export default function Navigation(){
     return (
-    <div>
-        <NavigationMenu>   
-        <NavigationMenuList>
-        <NavigationMenuItem>
-            <NavigationMenuTrigger>Upload</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                    <NavigationMenuLink href="#">Upload Item 1</NavigationMenuLink>
-                    <NavigationMenuLink href="#">Upload Item 2</NavigationMenuLink>
-                </NavigationMenuContent>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-            <NavigationMenuTrigger>Test</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                    <NavigationMenuLink href="#">Test Item 1</NavigationMenuLink>
-                    <NavigationMenuLink href="#">Test Item 2</NavigationMenuLink>
-                </NavigationMenuContent>
-        </NavigationMenuItem>
-        </NavigationMenuList>
+    <div className="bg-white shadow-md py-4 px-4"> 
+        <NavigationMenu>
+            <NavigationMenuList>
+            <NavigationMenuItem>
+                    <NavigationNavLink asChild>
+                        <Link to="/.">About</Link>
+                    </NavigationNavLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                    {/* Use NavigationNavLink and pass asChild to render Link */}
+                    <NavigationNavLink asChild>
+                        <Link to="/upload">Upload RAG Docs</Link>
+                    </NavigationNavLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                    <NavigationNavLink asChild>
+                        <Link to="/summarise">Generate Summary</Link>
+                    </NavigationNavLink>
+                </NavigationMenuItem>
+                {/* tbd - more NavigationMenuItems here */}
+            </NavigationMenuList>
         </NavigationMenu>
     </div>
     )

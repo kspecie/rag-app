@@ -12,6 +12,7 @@ import tempfile   # Added for temporary directory creation (pre embedding)
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Depends, Security
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 from typing import List
@@ -42,6 +43,20 @@ app = FastAPI(
     title="Clinical Summaries RAG API",
     description="API for RAG (Retrieval-Augmented Generation) on medical conversations and documents.",
     version="0.1.0",
+)
+
+# Configure CORS
+origins = [
+    "http://localhost", 
+    "http://localhost:5173", # Vite dev server
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True, # Allow cookies, authorization headers, etc.
+    allow_methods=["*"],    # Allow all HTTP methods (GET, POST, PUT, DELETE, OPTIONS)
+    allow_headers=["*"],    # Allow all headers, including your custom 'X-API-Key'
 )
 
 @app.get("/")
