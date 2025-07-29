@@ -97,5 +97,42 @@ services:
     volumes:
       - chroma_data:/chroma/chroma
 
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine # Provides a management UI at port 15672
+    container_name: rabbitmq_service
+    ports:
+      - "5673:5672"   # AMQP protocol port for clients
+      - "15673:15672" # Management UI (access via http://localhost:15672 with guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: "no"
+
+  rag-rabbitmq-consumer:
+    build: . # The Dockerfile in your rag-app root will be used
+    container_name: rag_rabbitmq_consumer_service
+    environment:
+      PYTHONPATH: /rag-app
+      # RabbitMQ connection details (point to the Docker service name)
+      RABBITMQ_HOST: rabbitmq_service
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_INPUT_QUEUE: rag_prompt
+      RABBITMQ_OUTPUT_QUEUE: inference_results
+      # RAG service URLs (point to the Docker service names)
+      TEI_SERVICE_URL: http://tei_service:80
+      TGI_SERVICE_URL: http://tgi_service:80
+      CHROMADB_SERVICE_URL: http://chromadb_service:8000 # Corrected to match your pipeline.py
+      CHROMA_COLLECTION_NAME: documents # Must match the collection name used by your ingest pipeline
+    # Command to run your consumer script from its location within the container
+    entrypoint: python -m app.consumers.rabbitmq_consumer
+    depends_on:
+      - rabbitmq # Ensure RabbitMQ is up before starting consumer
+      - chromadb_service
+      - tei_service
+      - tgi_service
+    restart: "no"
 volumes:
   chroma_data:

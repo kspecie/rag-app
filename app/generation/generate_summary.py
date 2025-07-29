@@ -93,17 +93,29 @@ def generate_summary(
     **Template to follow is below (ensure ALL titles are bolded and followed by double newlines):**
 
     **Presenting complaint:**\n\n
+
     **History of presenting complaint:**\n\n
+
     **Review of systems:**\n\n
+
     **Past medical history:**\n\n
+
     **Past surgical history:**\n\n
+
     **Drug history:**\n\n
+
     **Family history:**\n\n
+
     **Social history:**\n\n
+
     **Observation:**\n\n
+
     **Assessment:**\n\n\
+
     **Clinical impression/Differential diagnosis:**\n\n
+
     **Plan of Action:**\n\n
+    
 
     **Patient Doctor Conversation:**
     {transcribed_conversation}

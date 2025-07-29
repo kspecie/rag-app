@@ -8,3 +8,4 @@ unstructured[local-inference,pdf,docx,xlsx,pptx,markdown]
 fastapi
 uvicorn[standard]
 python-multipart
+pika
