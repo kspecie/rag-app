@@ -38,42 +38,84 @@ def generate_summary(
         context = "No specific external clinical guidelines were returned"
 
     # Example of a structured prompt for a clinical summary
+    # prompt = f"""
+    # You are an AI assistant specialized in medical summarization. Your task is to generate a concise, templated clinical summary based on the provided patient conversation (context) and the user's query.
+
+    # **Example of desired output format:**
+    # Presenting complaint: Patient reports a cough.
+    # History of presenting complaint: Cough started 3 days ago, non-productive.
+    # Family history: High cholesterol runs in the family.
+    # Past surgical history: Information not provided.
+
+    # Template to follow is below
+    
+    # Presenting complaint:
+    # History of presenting complaint:
+    # Review of systems:
+    # Past medical history:
+    # Past surgical history:
+    # Drug history:
+    # Family history:
+    # Social history:
+    # Observation:
+    # Assessment:
+    # Clinical impression/Differential diagnosis:
+    # Plan of Action:
+
+    # **Patient Doctor Conversation:**
+    # {transcribed_conversation}
+    # {context}
+
+    # Please generate the clinical summary. Do not make up any information.
+    # If there is no relevant information for a section, you MUST output the section title followed by "Information not provided.".
+    # For example, if no information is available for "Past surgical history", you would write:
+    # Past surgical history: Information not provided.
+
+    # Ensure ALL section titles from the template are present in your final summary.
+    # """
     prompt = f"""
     You are an AI assistant specialized in medical summarization. Your task is to generate a concise, templated clinical summary based on the provided patient conversation (context) and the user's query.
 
-    **Example of desired output format:**
-    Presenting complaint: Patient reports a cough.
-    History of presenting complaint: Cough started 3 days ago, non-productive.
-    Family history: High cholesterol runs in the family.
-    Past surgical history: Information not provided.
+    **VERY IMPORTANT: The entire summary MUST be formatted using Markdown.**
+    **Use bolding for ALL section titles (e.g., **Presenting complaint:**).**
+    **Use bullet points for lists where appropriate (e.g., Review of systems).**
+    **Use double newlines (empty lines) between each section to ensure proper paragraph breaks in Markdown.**
 
-    Template to follow is below
-    
-    Presenting complaint:
-    History of presenting complaint:
-    Review of systems:
-    Past medical history:
-    Past surgical history:
-    Drug history:
-    Family history:
-    Social history:
-    Observation:
-    Assessment:
-    Clinical impression/Differential diagnosis:
-    Plan of Action:
+    **Example of desired output format:**
+    **Presenting complaint:** Patient reports a cough.\n\n
+
+    **History of presenting complaint:** Cough started 3 days ago, non-productive.\n\n
+
+    **Family history:** High cholesterol runs in the family.\n\n
+
+    **Past surgical history:** Information not provided.\n\n
+
+    **Template to follow is below (ensure ALL titles are bolded and followed by double newlines):**
+
+    **Presenting complaint:**\n\n
+    **History of presenting complaint:**\n\n
+    **Review of systems:**\n\n
+    **Past medical history:**\n\n
+    **Past surgical history:**\n\n
+    **Drug history:**\n\n
+    **Family history:**\n\n
+    **Social history:**\n\n
+    **Observation:**\n\n
+    **Assessment:**\n\n\
+    **Clinical impression/Differential diagnosis:**\n\n
+    **Plan of Action:**\n\n
 
     **Patient Doctor Conversation:**
     {transcribed_conversation}
     {context}
 
-    Please generate the clinical summary. Do not make up any information.
-    If there is no relevant information for a section, you MUST output the section title followed by "Information not provided.".
+    Please generate the clinical summary following the exact template and formatting instructions. Do not make up any information.
+    If there is no relevant information for a section, you MUST output the section title (bolded) followed by "Information not provided.".
     For example, if no information is available for "Past surgical history", you would write:
-    Past surgical history: Information not provided.
+    **Past surgical history:** Information not provided.\n\n
 
-    Ensure ALL section titles from the template are present in your final summary.
+    Ensure ALL section titles from the template are present in your final summary and bolded.
     """
-
     headers = {"Content-Type": "application/json"}
     payload = {
         "inputs": prompt,

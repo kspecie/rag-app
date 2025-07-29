@@ -1,4 +1,5 @@
-FROM vault.habana.ai/gaudi-docker/1.21.0/rhel9.2/habanalabs/pytorch-installer-2.6.0:latest
+# FROM vault.habana.ai/gaudi-docker/1.21.0/rhel9.2/habanalabs/pytorch-installer-2.6.0:latest
+FROM vault.habana.ai/gaudi-docker/1.21.0/ubuntu24.04/habanalabs/pytorch-installer-2.6.0:latest
 
 ENV HABANA_VISIBLE_DEVICES=all
 ENV OMPI_MCA_btl_vader_single_copy_mechanism=none
@@ -6,13 +7,23 @@ ENV OMPI_MCA_btl_vader_single_copy_mechanism=none
 WORKDIR /rag-app
 
 # Install dependencies including sqlite-devel from system packages
-RUN yum install -y \
+# RUN yum install -y \
+#     wget tar \
+#     gcc make \
+#     zlib-devel readline-devel \
+#     glibc-devel bzip2-devel xz-devel openssl-devel libffi-devel \
+#     sqlite-devel \
+#     && yum clean all
+
+# First, update the package list
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     wget tar \
     gcc make \
-    zlib-devel readline-devel \
-    glibc-devel bzip2-devel xz-devel openssl-devel libffi-devel \
-    sqlite-devel \
-    && yum clean all
+    zlib1g-dev libreadline-dev \
+    libc6-dev libbz2-dev liblzma-dev libssl-dev libffi-dev \
+    libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # Recompile Python’s sqlite3 module to link to the new SQLite

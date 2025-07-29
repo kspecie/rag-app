@@ -16,6 +16,7 @@ async def generate_summary_endpoint(transcribed_conversation: str):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transcribed conversation cannot be empty.")
 
     summary = run_retrieval_and_generation_pipeline(transcribed_conversation)
+    print("summary": summary)
     if summary is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate summary.")
 

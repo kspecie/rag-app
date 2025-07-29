@@ -222,7 +222,7 @@ const SummarizePage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div
-              className="w-full p-4 border rounded-md min-h-[300px] max-h-[500px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-primary-500 resize-y text-left"
+              className="w-full p-4 border rounded-md min-h-[500px] max-h-[1000px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-primary-500 resize-y text-left"
             >
               {summaryOutput ? (
                 <ReactMarkdown>{summaryOutput}</ReactMarkdown>
