@@ -3,7 +3,7 @@ services:
   rag-app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.rag-app
     image: rag-app-image
     container_name: rag-app
     env_file:
@@ -26,10 +26,9 @@ services:
       - tei_service
       - chromadb_service
       - tgi_service
-
- 
     working_dir: /rag-app
-    command: ["/bin/bash"]
+    # command: ["/bin/bash"]
+    # entrypoint: ["/bin/bash", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     stdin_open: true
     tty: true
 
@@ -97,5 +96,53 @@ services:
     volumes:
       - chroma_data:/chroma/chroma
 
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine # Provides a management UI at port 15672
+    container_name: rabbitmq_service
+    ports:
+      - "5673:5672"   # AMQP protocol port for clients
+      - "15673:15672" # Management UI (access via http://localhost:15672 with guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: "no"
+
+  rag-rabbitmq-consumer:
+    build: 
+      context: .
+      dockerfile: Dockerfile.rabbitmq-consumer
+    image: rag-rabbitmq-consumer-image
+    container_name: rag_rabbitmq_consumer_service
+    env_file:
+      - ./.env
+    volumes:
+      - .:/rag-app
+      - /shared/models:/models
+    environment:
+      RABBITMQ_HOST: rabbitmq_service
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_INPUT_QUEUE: rag_prompt
+      RABBITMQ_OUTPUT_QUEUE: inference_results
+      API_KEY: ${API_KEY}
+      TEI_URL: ${TEI_SERVICE_URL}
+      HF_TOKEN: "${HF_TOKEN}"
+      CHROMA_HOST: "chromadb_service"
+      CHROMA_PORT: "8000"
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+    depends_on:
+      - rabbitmq
+      - tei_service
+      - chromadb_service
+      - tgi_service
+    working_dir: /rag-app
+    # entrypoint: ["python3", "app/consumers/rabbitmq_consumer.py"]
+    restart: "no"   
 volumes:
   chroma_data:
+  rabbitmq_data:
