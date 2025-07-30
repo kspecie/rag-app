@@ -17,6 +17,8 @@ from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 from typing import List
 from pydantic import BaseModel
+from fastapi import Request
+from typing import Optional
 
 # Import the higher-level pipeline functions from app.core.pipeline
 from app.core.pipeline import run_ingestion_pipeline, run_embedding_and_storage_pipeline, run_retrieval_and_generation_pipeline
@@ -29,15 +31,26 @@ load_dotenv()
 
 # --- API Key Setup ---
 API_KEY_NAME = "X-API-Key"
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
+# api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 API_KEY = os.getenv("API_KEY", "your-super-secret-default-key-DONT-USE-IN-PROD")
 if API_KEY == "your-super-secret-default-key-DONT-USE-IN-PROD":
     logger.warning("API_KEY environment variable not set. Using default. Set API_KEY for production.")
 
-async def get_api_key(api_key: str = Security(api_key_header)):
+# async def get_api_key(api_key: str = Security(api_key_header)):
+#     if api_key == API_KEY:
+#         return api_key
+#     raise HTTPException(status_code=403, detail="Could not validate credentials - Invalid API Key")
+
+async def get_api_key(request: Request, api_key: Optional[str] = Security(api_key_header)):
+    # Skip API key validation for OPTIONS requests (CORS preflight)
+    if request.method == "OPTIONS":
+        return None
+    
     if api_key == API_KEY:
         return api_key
     raise HTTPException(status_code=403, detail="Could not validate credentials - Invalid API Key")
+
 
 # --- FastAPI App Definition ---
 app = FastAPI(
@@ -50,6 +63,7 @@ app = FastAPI(
 origins = [
     "http://localhost", 
     "http://localhost:5173", # Vite dev server
+    "http://localhost:5174"
 ]
 
 app.add_middleware(

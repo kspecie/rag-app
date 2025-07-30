@@ -5,7 +5,9 @@ requests
 chromadb
 python-dotenv
 unstructured[local-inference,pdf,docx,xlsx,pptx,markdown]
-fastapi
+fastapi[all]
 uvicorn[standard]
 python-multipart
 pika
+PyPDF2
+python-dotenv 
