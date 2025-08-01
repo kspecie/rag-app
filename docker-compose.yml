@@ -9,7 +9,7 @@ services:
     env_file:
       - ./.env
     ports:
-      - "8000:8000"
+      - "8006:8000"
     volumes:
       - .:/rag-app
       - /shared/models:/models
@@ -19,9 +19,9 @@ services:
       HF_TOKEN: "${HF_TOKEN}"
       CHROMA_HOST: "chromadb_service"
       CHROMA_PORT: "8000"
-      LANGSMITH_TRACING: ${LANGSMITH_TRACING}
+      LANGSMITH_TRACING_V2: ${LANGSMITH_TRACING_V2}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
-
+      LANGSMITH_PROJECT: "summaries-rag-app"
     depends_on:
       - tei_service
       - chromadb_service
@@ -133,7 +133,7 @@ services:
       HF_TOKEN: "${HF_TOKEN}"
       CHROMA_HOST: "chromadb_service"
       CHROMA_PORT: "8000"
-      LANGSMITH_TRACING: ${LANGSMITH_TRACING}
+      LANGSMITH_TRACING_V2: ${LANGSMITH_TRACING_V2}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
     depends_on:
       - rabbitmq

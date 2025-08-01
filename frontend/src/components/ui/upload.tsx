@@ -60,7 +60,7 @@ export function DocumentUploader({
 
 
     try {
-      const response = await fetch("http://localhost:8000/documents/upload/", {
+      const response = await fetch("http://localhost:8006/documents/upload/", {
         method: "POST",
         body: formData,
         headers: {
