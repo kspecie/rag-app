@@ -43,7 +43,7 @@ services:
       - /shared/models:/models # Mount shared models for TEI to access embedding models
     environment:
       MODEL_ID: BAAI/bge-small-en-v1.5 #embedding model for TEI to load OR could be in shared/models/hub
-      #HABANA_VISIBLE_DEVICES: "1"
+      HABANA_VISIBLE_DEVICES: "all"
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       MAX_WARMUP_SEQUENCE_LENGTH: "512"
       #DEVICE: hpu
@@ -59,7 +59,7 @@ services:
     #image: ghcr.io/huggingface/tgi-gaudi:2.3.1
     image: ghcr.io/huggingface/text-generation-inference:3.3.4-intel-cpu
     container_name: tgi_service
-    #runtime: habana
+    runtime: habana
     volumes: 
       - /shared/models:/models
     # volumes: 
@@ -71,7 +71,7 @@ services:
       #MODEL_ID: "${TGI_MODEL_PATH}"
       #MODEL_ID: "."
       NUM_SHARD: 2
-      #HABANA_VISIBLE_DEVICES: "0"
+      HABANA_VISIBLE_DEVICES: "all"
       OMPI_MCA_btl_vader_single_copy_mechanism: "none"
       HF_TOKEN: "${HF_TOKEN}"
       MAX_INPUT_TOKENS: "5000"
