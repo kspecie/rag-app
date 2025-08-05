@@ -47,6 +47,7 @@ services:
       OMPI_MCA_btl_vader_single_copy_mechanism: none
       MAX_WARMUP_SEQUENCE_LENGTH: "512"
       #DEVICE: hpu
+      PAYLOAD_LIMIT: "100000000" # 100MB (in bytes)
     ports:
       - "8004:80"
     cap_add:

@@ -83,19 +83,14 @@ def generate_summary(
 
     **Example of desired output format:**
     **Presenting complaint:** Patient reports a cough.\n\n
-
     **History of presenting complaint:** Cough started 3 days ago, non-productive.\n\n
-
     **Family history:** High cholesterol runs in the family.\n\n
-
     **Past surgical history:** Information not provided.\n\n
 
+
     **Template to follow is below (ensure ALL titles are bolded and followed by double newlines):**
-
     **Presenting complaint:**\n\n
-
     **History of presenting complaint:**\n\n
-
     **Review of systems:**\n\n
     **Past medical history:**\n\n
     **Past surgical history:**\n\n

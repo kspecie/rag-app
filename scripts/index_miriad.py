@@ -1,0 +1,121 @@
+import os
+import requests
+import chromadb
+import json
+from datasets import load_dataset
+from chromadb.utils import embedding_functions
+
+# --- Configuration ---
+CHROMA_HOST = os.getenv("CHROMA_HOST", "chromadb_service")
+CHROMA_PORT = os.getenv("CHROMA_PORT", "8000")
+TEI_HOST = os.getenv("TEI_HOST", "tei_service")
+TEI_PORT = os.getenv("TEI_PORT", "80")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+
+# --- Payload Control ---
+SAFE_PAYLOAD_LIMIT_BYTES = 500000  # 
+MAX_DOCS_PER_BATCH = 16  # Secondary cap to avoid oversized batches
+
+# --- Initialize Clients ---
+try:
+    chroma_client = chromadb.HttpClient(
+        host=CHROMA_HOST,
+        port=CHROMA_PORT
+    )
+    print(f"Connected to ChromaDB at http://{CHROMA_HOST}:{CHROMA_PORT}")
+
+    def tei_embedding_function(texts):
+        tei_url = f"http://{TEI_HOST}:{TEI_PORT}/embed"
+        response = requests.post(
+            tei_url,
+            json={"inputs": texts}
+        )
+        response.raise_for_status()
+        return response.json()
+
+except requests.exceptions.RequestException as e:
+    print(f"Error connecting to a service: {e}")
+    exit(1)
+
+# --- Main Indexing Logic ---
+def index_miriad_dataset():
+    collection_name = "miriad_knowledge"
+
+    try:
+        chroma_client.get_collection(name=collection_name)
+        print(f"Collection '{collection_name}' already exists. Skipping indexing.")
+        return
+    except chromadb.errors.NotFoundError:
+        print(f"Collection '{collection_name}' not found. Creating and indexing...")
+
+    collection = chroma_client.create_collection(
+        name=collection_name,
+        embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL)
+    )
+
+    print("Loading Miriad dataset...")
+    try:
+        dataset = load_dataset("miriad/miriad-5.8M", split="train[:20000]")
+        print("Dataset loaded successfully.")
+    except Exception as e:
+        print(f"Failed to load dataset: {e}")
+        return
+
+    total_docs = len(dataset)
+    current_batch_docs = []
+    current_batch_ids = []
+    current_payload_size = 0
+    document_counter = 0
+
+    for i, row in enumerate(dataset):
+        document = f"Question: {row['question']}\nAnswer: {row['answer']}"
+        doc_id = f"miriad_{i}"
+        doc_size = len(json.dumps(document))
+
+        # Print debug info for payload sizing
+        print(f"Document {i} size: {doc_size} bytes")
+
+        # Check for payload or batch-size limit
+        if (current_payload_size + doc_size > SAFE_PAYLOAD_LIMIT_BYTES) or (len(current_batch_docs) >= MAX_DOCS_PER_BATCH):
+            if current_batch_docs:
+                try:
+                    embeddings = tei_embedding_function(current_batch_docs)
+                    collection.add(
+                        documents=current_batch_docs,
+                        embeddings=embeddings,
+                        ids=current_batch_ids
+                    )
+                    print(f"Ingested {document_counter} / {total_docs} documents.")
+                except requests.exceptions.HTTPError as e:
+                    print(f"Error getting embeddings from TEI: {e}")
+                    raise e
+
+            # Reset for next batch
+            current_batch_docs = [document]
+            current_batch_ids = [doc_id]
+            current_payload_size = doc_size
+        else:
+            current_batch_docs.append(document)
+            current_batch_ids.append(doc_id)
+            current_payload_size += doc_size
+
+        document_counter += 1
+
+    # Final batch
+    if current_batch_docs:
+        try:
+            embeddings = tei_embedding_function(current_batch_docs)
+            collection.add(
+                documents=current_batch_docs,
+                embeddings=embeddings,
+                ids=current_batch_ids
+            )
+            print(f"Ingested {document_counter} / {total_docs} documents.")
+        except requests.exceptions.HTTPError as e:
+            print(f"Error getting embeddings from TEI (final batch): {e}")
+            raise e
+
+    print("\nIndexing complete! The 'miriad_knowledge' collection is ready to use.")
+
+if __name__ == "__main__":
+    index_miriad_dataset()
