@@ -1,7 +1,7 @@
 import os
 import chromadb
 
-# --- Configuration (Based on your docker-compose.yml) ---
+
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chromadb_service")
 CHROMA_PORT = os.getenv("CHROMA_PORT", "8000")
 COLLECTION_NAME = "miriad_knowledge"
