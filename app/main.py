@@ -1,3 +1,210 @@
+# #app/main.py
+# import sys
+# import pysqlite3
+
+# # workaround for chromadb/sqlite3 before anything else that might import it
+# sys.modules["sqlite3"] = pysqlite3
+# sys.modules["_sqlite3"] = pysqlite3.dbapi2
+
+# import os
+# import logging
+# import shutil     # Added for file handling
+# import tempfile   # Added for temporary directory creation (pre embedding)
+# from dotenv import load_dotenv
+
+# from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Depends, Security
+# from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.responses import JSONResponse
+# from fastapi.security import APIKeyHeader
+# from typing import List
+# from pydantic import BaseModel
+# from fastapi import Request
+# from typing import Optional
+
+# # Import the higher-level pipeline functions from app.core.pipeline
+# from app.core.pipeline import run_ingestion_pipeline, run_embedding_and_storage_pipeline, run_retrieval_and_generation_pipeline
+# from app.backend.api.documents import router as documents_router
+
+# # Set up logging
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
+
+# load_dotenv()
+
+# # --- API Key Setup ---
+# API_KEY_NAME = "X-API-Key"
+# # api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
+# api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+# API_KEY = os.getenv("API_KEY", "your-super-secret-default-key-DONT-USE-IN-PROD")
+# if API_KEY == "your-super-secret-default-key-DONT-USE-IN-PROD":
+#     logger.warning("API_KEY environment variable not set. Using default. Set API_KEY for production.")
+
+# # async def get_api_key(api_key: str = Security(api_key_header)):
+# #     if api_key == API_KEY:
+# #         return api_key
+# #     raise HTTPException(status_code=403, detail="Could not validate credentials - Invalid API Key")
+
+# async def get_api_key(request: Request, api_key: Optional[str] = Security(api_key_header)):
+#     # Skip API key validation for OPTIONS requests (CORS preflight)
+#     if request.method == "OPTIONS":
+#         return None
+    
+#     if api_key == API_KEY:
+#         return api_key
+#     raise HTTPException(status_code=403, detail="Could not validate credentials - Invalid API Key")
+
+
+# # --- FastAPI App Definition ---
+# app = FastAPI(
+#     title="Clinical Summaries RAG API",
+#     description="API for RAG (Retrieval-Augmented Generation) on medical conversations and documents.",
+#     version="0.1.0",
+# )
+
+# app.include_router(documents_router, dependencies=[Depends(get_api_key)])
+
+# # Configure CORS
+# origins = [
+#     "http://localhost", 
+#     "http://localhost:5173", # Vite dev server
+#     "http://localhost:5174"
+# ]
+
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True, # Allow cookies, authorization headers, etc.
+#     allow_methods=["*"],    # Allow all HTTP methods (GET, POST, PUT, DELETE, OPTIONS)
+#     allow_headers=["*"],    # Allow all headers, including your custom 'X-API-Key'
+# )
+
+# @app.get("/")
+# async def read_root():
+#     """
+#     Root endpoint to confirm API is running.
+#     This endpoint can be public if you want, or you can add security to it too.
+#     """
+#     return {"message": "Medical Conversation RAG API is running. Visit /docs for API documentation."}
+
+# @app.post("/documents/upload/", summary="Upload documents to ChromaDB")
+# async def upload_documents(files: List[UploadFile] = File(...), api_key: str = Depends(get_api_key)):
+#     """
+#     Uploads document files (e.g., .txt, .pdf) to be processed and stored
+#     in ChromaDB for retrieval.
+#     """
+#     if not files:
+#         raise HTTPException(status_code=400, detail="No files provided for upload.")
+
+#     processed_count = 0
+#     temp_dir = None
+#     try:
+#         # Create a temporary directory to save uploaded files
+#         temp_dir = tempfile.mkdtemp()
+#         logger.info(f"Saving uploaded files to temporary directory: {temp_dir}")
+#         for file in files:
+#             file_path = os.path.join(temp_dir, file.filename)
+#             # Use await file.read() for async handling of UploadFile content
+#             contents = await file.read()
+#             with open(file_path, "wb") as buffer:
+#                 buffer.write(contents)
+#             logger.info(f"Saved {file.filename} to {file_path}")
+
+#         # --- Call the run_ingestion_pipeline from app.core.pipeline ---
+#         # This function expects a directory path
+#         documents_processed = run_ingestion_pipeline(temp_dir)
+        
+#         # --- Then call the embedding and storage pipeline with the results
+#         if documents_processed:
+#             run_embedding_and_storage_pipeline(documents_processed)
+#             processed_count = len(documents_processed) # Count based on what was processed
+#         else:
+#             logger.warning("No documents processed by ingestion pipeline.")
+
+
+#         return JSONResponse(
+#             status_code=200,
+#             content={"message": f"Successfully processed {processed_count} files and added them to ChromaDB."}
+#         )
+#     except Exception as e:
+#         logger.error(f"Error during document upload: {e}", exc_info=True)
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Failed to process documents: {str(e)}"
+#         )
+#     finally:
+#         # Clean up the temporary directory
+#         if temp_dir and os.path.exists(temp_dir):
+#             shutil.rmtree(temp_dir)
+#             logger.info(f"Cleaned up temporary directory: {temp_dir}")
+
+
+# # --- NEW: Pydantic model for summarization request body ---
+# class SummarizeRequest(BaseModel):
+#     text: str
+
+# @app.post("/summaries/generate/", summary="Generate a clinical summary from conversation")
+# async def generate_clinical_summary(
+#     request: SummarizeRequest, # <--- CHANGED: Expecting a JSON body
+#     api_key: str = Depends(get_api_key)
+# ):
+#     """
+#     Generates a clinical summary based on a provided transcribed medical conversation.
+#     It uses RAG to retrieve relevant context from uploaded documents before summarization.
+#     """
+#     transcribed_conversation = request.text
+
+#     if not transcribed_conversation.strip():
+#         raise HTTPException(status_code=400, detail="Transcribed conversation cannot be empty.")
+
+#     try:
+#         # --- Call the run_retrieval_and_generation_pipeline ---
+#         summary_result = run_retrieval_and_generation_pipeline(transcribed_conversation)
+        
+#         if summary_result is None:
+#             raise HTTPException(
+#                 status_code=404,
+#                 detail="Could not generate summary (e.g., no relevant context found or TGI issue)."
+#             )
+
+#         return JSONResponse(
+#             status_code=200,
+#             content={"summary": summary_result}
+#         )
+#     except Exception as e:
+#         logger.error(f"Error during summary generation: {e}", exc_info=True)
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Failed to generate summary: {str(e)}"
+#         )
+
+
+# @app.delete("/documents/delete/", summary="Delete documents from ChromaDB")
+# async def delete_documents(api_key: str = Depends(get_api_key)):
+#     """
+#     Deletes all documents from the ChromaDB vector store.
+#     """
+#     try:
+#         # Assuming ChromaDB is using a specific persistent directory.
+#         persist_dir = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")  # Adjust as needed
+
+#         if os.path.exists(persist_dir):
+#             shutil.rmtree(persist_dir)
+#             logger.info(f"Deleted ChromaDB persistence directory: {persist_dir}")
+#         else:
+#             logger.warning(f"ChromaDB directory does not exist: {persist_dir}")
+#             raise HTTPException(status_code=404, detail="No documents to delete.")
+
+#         return JSONResponse(
+#             status_code=200,
+#             content={"message": "Successfully deleted documents from ChromaDB."}
+#         )
+
+#     except Exception as e:
+#         logger.error(f"Error deleting documents: {e}", exc_info=True)
+#         raise HTTPException(status_code=500, detail=f"Error deleting documents: {str(e)}")
+
+
+#app/main.py
 import sys
 import pysqlite3
 
@@ -7,21 +214,21 @@ sys.modules["_sqlite3"] = pysqlite3.dbapi2
 
 import os
 import logging
-import shutil     # Added for file handling
-import tempfile   # Added for temporary directory creation (pre embedding)
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Depends, Security
+from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
-from typing import List
 from pydantic import BaseModel
 from fastapi import Request
 from typing import Optional
 
 # Import the higher-level pipeline functions from app.core.pipeline
-from app.core.pipeline import run_ingestion_pipeline, run_embedding_and_storage_pipeline, run_retrieval_and_generation_pipeline
+from app.core.pipeline import run_retrieval_and_generation_pipeline
+
+# Import the documents router
+from app.backend.api.documents import router as documents_router
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -31,16 +238,10 @@ load_dotenv()
 
 # --- API Key Setup ---
 API_KEY_NAME = "X-API-Key"
-# api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 API_KEY = os.getenv("API_KEY", "your-super-secret-default-key-DONT-USE-IN-PROD")
 if API_KEY == "your-super-secret-default-key-DONT-USE-IN-PROD":
     logger.warning("API_KEY environment variable not set. Using default. Set API_KEY for production.")
-
-# async def get_api_key(api_key: str = Security(api_key_header)):
-#     if api_key == API_KEY:
-#         return api_key
-#     raise HTTPException(status_code=403, detail="Could not validate credentials - Invalid API Key")
 
 async def get_api_key(request: Request, api_key: Optional[str] = Security(api_key_header)):
     # Skip API key validation for OPTIONS requests (CORS preflight)
@@ -50,7 +251,6 @@ async def get_api_key(request: Request, api_key: Optional[str] = Security(api_ke
     if api_key == API_KEY:
         return api_key
     raise HTTPException(status_code=403, detail="Could not validate credentials - Invalid API Key")
-
 
 # --- FastAPI App Definition ---
 app = FastAPI(
@@ -74,73 +274,23 @@ app.add_middleware(
     allow_headers=["*"],    # Allow all headers, including your custom 'X-API-Key'
 )
 
+# Include the documents router with API key dependency
+app.include_router(documents_router, dependencies=[Depends(get_api_key)])
+
 @app.get("/")
 async def read_root():
     """
     Root endpoint to confirm API is running.
-    This endpoint can be public if you want, or you can add security to it too.
     """
     return {"message": "Medical Conversation RAG API is running. Visit /docs for API documentation."}
 
-@app.post("/documents/upload/", summary="Upload documents to ChromaDB")
-async def upload_documents(files: List[UploadFile] = File(...), api_key: str = Depends(get_api_key)):
-    """
-    Uploads document files (e.g., .txt, .pdf) to be processed and stored
-    in ChromaDB for retrieval.
-    """
-    if not files:
-        raise HTTPException(status_code=400, detail="No files provided for upload.")
-
-    processed_count = 0
-    temp_dir = None
-    try:
-        # Create a temporary directory to save uploaded files
-        temp_dir = tempfile.mkdtemp()
-        logger.info(f"Saving uploaded files to temporary directory: {temp_dir}")
-        for file in files:
-            file_path = os.path.join(temp_dir, file.filename)
-            # Use await file.read() for async handling of UploadFile content
-            contents = await file.read()
-            with open(file_path, "wb") as buffer:
-                buffer.write(contents)
-            logger.info(f"Saved {file.filename} to {file_path}")
-
-        # --- Call the run_ingestion_pipeline from app.core.pipeline ---
-        # This function expects a directory path
-        documents_processed = run_ingestion_pipeline(temp_dir)
-        
-        # --- Then call the embedding and storage pipeline with the results
-        if documents_processed:
-            run_embedding_and_storage_pipeline(documents_processed)
-            processed_count = len(documents_processed) # Count based on what was processed
-        else:
-            logger.warning("No documents processed by ingestion pipeline.")
-
-
-        return JSONResponse(
-            status_code=200,
-            content={"message": f"Successfully processed {processed_count} files and added them to ChromaDB."}
-        )
-    except Exception as e:
-        logger.error(f"Error during document upload: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to process documents: {str(e)}"
-        )
-    finally:
-        # Clean up the temporary directory
-        if temp_dir and os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-            logger.info(f"Cleaned up temporary directory: {temp_dir}")
-
-
-# --- NEW: Pydantic model for summarization request body ---
+# --- Pydantic model for summarization request body ---
 class SummarizeRequest(BaseModel):
     text: str
 
 @app.post("/summaries/generate/", summary="Generate a clinical summary from conversation")
 async def generate_clinical_summary(
-    request: SummarizeRequest, # <--- CHANGED: Expecting a JSON body
+    request: SummarizeRequest,
     api_key: str = Depends(get_api_key)
 ):
     """
@@ -172,3 +322,42 @@ async def generate_clinical_summary(
             status_code=500,
             detail=f"Failed to generate summary: {str(e)}"
         )
+# @app.delete("/documents/")
+# async def delete_documents(payload: DeletePayload):
+#     # This function receives the payload as a DeletePayload object
+#     # The `payload` object will contain a list of strings at `payload.ids`
+    
+#     # Example logic to delete documents from your vector store
+#     try:
+#         # Assuming you have a function to interact with your database
+#         deleted_count = await delete_documents_by_ids(payload.ids)
+        
+#         # You can add more detailed logic here, like checking for existence
+#         if deleted_count == 0:
+#             raise HTTPException(status_code=404, detail="No documents found to delete.")
+
+#         return {"status": "success", "deleted_count": deleted_count}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
+
+# @app.delete("/documents/delete-all/", summary="Delete all documents from ChromaDB")
+# async def delete_all_documents(api_key: str = Depends(get_api_key)):
+#     """
+#     Delete all documents from ChromaDB by removing the entire persistence directory.
+#     """
+#     try:
+#         persist_dir = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+        
+#         if os.path.exists(persist_dir):
+#             shutil.rmtree(persist_dir)
+#             logger.info(f"Deleted ChromaDB persistence directory: {persist_dir}")
+#             return {"message": "Successfully deleted all documents from ChromaDB."}
+#         else:
+#             raise HTTPException(status_code=404, detail="No documents to delete.")
+    
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logger.error(f"Error deleting all documents: {e}")
+#         raise HTTPException(status_code=500, detail=f"Error deleting all documents: {str(e)}")

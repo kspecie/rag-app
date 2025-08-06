@@ -49,6 +49,10 @@ def split_documents_into_chunks(
 
     all_splits = text_splitter.split_documents(documents)
 
+    for chunk in all_splits:
+        if "source" not in chunk.metadata and "file_name" in chunk.metadata:
+            chunk.metadata["source"] = chunk.metadata["file_name"]
+
     print(f"Original documents split into {len(all_splits)} chunks.")
     return all_splits
 

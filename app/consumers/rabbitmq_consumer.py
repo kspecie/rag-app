@@ -183,7 +183,7 @@ def main():
                     host=RABBITMQ_HOST,
                     port=RABBITMQ_PORT,
                     credentials=credentials,
-                    heartbeat=60 # Recommended for long-lived connections
+                    heartbeat=120 # Recommended for long-lived connections
                 )
             )
             print("Successfully connected to RabbitMQ!")
@@ -230,8 +230,6 @@ def main():
             print(f"Failed to decode message body as JSON: {body.decode()}")
         except Exception as e:
             print(f"Error processing message for delivery_tag {method.delivery_tag}: {e}")
-            # In a production environment, you might want to send this to a dead-letter queue
-            # or log it more robustly.
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
