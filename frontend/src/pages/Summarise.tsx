@@ -124,7 +124,7 @@ const SummarizePage: React.FC = () => {
     setSummaryOutput('');
 
     try {
-      const response = await fetch("http://localhost:8000/summaries/generate/", {
+      const response = await fetch("http://localhost:8006/summaries/generate/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

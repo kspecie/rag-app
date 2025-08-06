@@ -1,3 +1,4 @@
+langchain
 langchain-community
 langchain-text-splitters
 pypdf
@@ -11,3 +12,5 @@ python-multipart
 pika
 PyPDF2
 python-dotenv 
+datasets
+sentence_transformers

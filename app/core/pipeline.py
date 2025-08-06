@@ -8,6 +8,7 @@ sys.modules["_sqlite3"] = pysqlite3.dbapi2
 
 
 from app.data_ingestion.document_loader import load_documents
+from app.data_ingestion.split_and_chunk import clean_document_content
 from app.data_ingestion.split_and_chunk import split_documents_into_chunks
 from app.embed_and_store.embed import create_embeddings
 from app.embed_and_store.store import store_chunks_in_chroma
@@ -28,9 +29,11 @@ def run_ingestion_pipeline(raw_data_dir: str):
         print("No documents loaded. Exiting ingestion pipeline.")
         return [] # Return an empty list if no docs
 
-    # 2. Split and Chunk Documents
-    print("Step 2: Splitting documents into chunks...")
-    chunks = split_documents_into_chunks(documents)
+    # 2. Clean, Split and Chunk Documents
+    print("Step 2: Cleaning then Splitting documents into chunks...")
+    clean_documents = clean_document_content(documents)
+    print("Documents have been cleaned.")
+    chunks = split_documents_into_chunks(clean_documents)
     if not chunks:
         print("No chunks generated. Exiting ingestion pipeline.")
         return []
@@ -45,7 +48,7 @@ def run_embedding_and_storage_pipeline(chunks: list):
     print("\n--- Starting Embedding and Storage Pipeline ---")
 
     # 3. Create Embeddings
-    print("Step 3: Generating embeddings for chunks...")
+    print("Step 3: Generating embeddings for chunkss...")
     embedded_chunks = create_embeddings(chunks, os.getenv("TEI_SERVICE_URL"))
     if not embedded_chunks:
         print("No embeddings generated. Exiting embedding pipeline.")

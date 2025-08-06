@@ -19,12 +19,26 @@ def store_chunks_in_chroma(
         # Get or create the collection
         collection = client.get_or_create_collection(name=collection_name)
 
-        # Prepare data for ChromaDB
-        ids = [f"doc_{i}" for i in range(len(embedded_chunks))] # Unique IDs for each chunk
-        documents = [item["text"] for item in embedded_chunks]
-        metadatas = [item["metadata"] for item in embedded_chunks]
-        embeddings = [item["embedding"] for item in embedded_chunks]
+        # # Prepare data for ChromaDB
+        # ids = [f"doc_{i}" for i in range(len(embedded_chunks))] # Unique IDs for each chunk
+        # documents = [item["text"] for item in embedded_chunks]
+        # metadatas = [item["metadata"] for item in embedded_chunks]
+        # embeddings = [item["embedding"] for item in embedded_chunks]
+        ids = []
+        documents = []
+        metadatas = []
+        embeddings = []
 
+        for i, item in enumerate(embedded_chunks):
+            source = item["metadata"].get("source", "unknown_source")
+            chunk_id = f"{source}_chunk_{i}"
+
+            ids.append(chunk_id)
+            documents.append(item["text"])
+            metadatas.append(item["metadata"])
+            embeddings.append(item["embedding"])
+        print("CHUNK IDS:", ids)
+        print("METADATAS:", metadatas)
         # Add to ChromaDB
         collection.add(
             documents=documents,
