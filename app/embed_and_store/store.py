@@ -19,11 +19,7 @@ def store_chunks_in_chroma(
         # Get or create the collection
         collection = client.get_or_create_collection(name=collection_name)
 
-        # # Prepare data for ChromaDB
-        # ids = [f"doc_{i}" for i in range(len(embedded_chunks))] # Unique IDs for each chunk
-        # documents = [item["text"] for item in embedded_chunks]
-        # metadatas = [item["metadata"] for item in embedded_chunks]
-        # embeddings = [item["embedding"] for item in embedded_chunks]
+        # Prepare data for ChromaDB
         ids = []
         documents = []
         metadatas = []
@@ -52,13 +48,3 @@ def store_chunks_in_chroma(
         print(f"Error storing chunks in ChromaDB: {e}")
 
         
-# if __name__ == "__main__":
-#     print("This module is meant to be imported and used by main.py or other pipeline scripts.")
-#     print("Please run main.py or add dummy data for direct testing.")
-    # Example dummy usage:
-    # dummy_embedded_chunks = [
-    #     {"text": "Text content 1", "metadata": {"page": 1}, "embedding": [0.1, 0.2, ...]},
-    #     {"text": "Text content 2", "metadata": {"page": 1}, "embedding": [0.3, 0.4, ...]},
-    # ]
-    # CHROMADB_URL = os.getenv("CHROMADB_SERVICE_URL", "http://chromadb_service:8000")
-    # store_chunks_in_chroma(dummy_embedded_chunks, CHROMADB_URL, "test_collection")

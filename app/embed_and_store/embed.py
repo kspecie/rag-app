@@ -119,17 +119,3 @@ def create_embeddings(chunks: List[Document], tei_service_url: str) -> List[Dict
     print(f"Ingestion pipeline complete. Generated {len(all_embeddings)} embeddings.")
     return all_embeddings
 
-
-# if __name__ == "__main__":
-#     # This block won't run directly without some dummy data
-#     print("This module is meant to be imported and used by main.py or other pipeline scripts.")
-#     print("Please run main.py or add dummy data for direct testing.")
-    # Example dummy usage:
-    # from langchain.schema import Document
-    # dummy_chunks = [
-    #     Document(page_content="This is the first sentence.", metadata={"source": "test"}),
-    #     Document(page_content="This is the second sentence.", metadata={"source": "test"}),
-    # ]
-    # TEI_URL = os.getenv("TEI_SERVICE_URL", "http://tei_service:80")
-    # embedded = create_embeddings(dummy_chunks, TEI_URL)
-    # print(f"Embedded dummy: {embedded[:1]}") # Print first one for brevity
