@@ -68,7 +68,7 @@ def run_retrieval_and_generation_pipeline(transcribed_conversation: str):
 
     # 5. Retrieve Relevant Chunks
     print(f"Step 5: Retrieving relevant chunks for query")
-    relevant_chunks = retrieve_relevant_chunks(transcribed_conversation, os.getenv("CHROMADB_SERVICE_URL"), os.getenv("CHROMA_COLLECTION_NAME"))
+    relevant_chunks = retrieve_relevant_chunks(transcribed_conversation, os.getenv("CHROMADB_SERVICE_URL"), n_results=10)
     if not relevant_chunks:
         print("No relevant chunks found. Cannot generate summary.")
         return None
