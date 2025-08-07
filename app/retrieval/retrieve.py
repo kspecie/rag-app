@@ -106,5 +106,5 @@ def retrieve_relevant_chunks(
         return relevant_chunks[:n_results]
 
     except Exception as e:
-        print(f"❌ Error retrieving from ChromaDB: {e}")
+        print(f"Error retrieving from ChromaDB: {e}")
         return []
