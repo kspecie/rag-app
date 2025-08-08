@@ -1,13 +1,14 @@
 import requests
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 def generate_summary(
     transcribed_conversation: str,
     relevant_knowledge_chunks: List[Dict[str, Any]],
     tgi_service_url: str,
     max_new_tokens: int = 3000,
-    temperature: float = 0.2
+    temperature: float = 0.2,
+    additional_content: Optional[str] = None 
 ) -> str:
     """
     Generates a templated clinical summary using the TGI service (Med 42 LLM).
@@ -37,6 +38,10 @@ def generate_summary(
     else:
         context = "No specific external clinical guidelines were returned"
 
+
+    extra_notes = ""
+    if additional_content and additional_content.strip():
+        extra_notes = f"\n\n**Additional User Notes:**\n{additional_content.strip()}\n"
     # Example of a structured prompt for a clinical summary
     # prompt = f"""
     # You are an AI assistant specialized in medical summarization. Your task is to generate a concise, templated clinical summary based on the provided patient conversation (context) and the user's query.
@@ -105,6 +110,7 @@ def generate_summary(
 
     **Patient Doctor Conversation:**
     {transcribed_conversation}
+    {extra_notes}
     {context}
 
     Please generate the clinical summary following the exact template and formatting instructions. Do not make up any information.

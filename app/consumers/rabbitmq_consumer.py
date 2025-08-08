@@ -87,7 +87,6 @@ def fetch_and_extract_text_from_url(file_url: str, conversation_id: str) -> Opti
         print(f"[{conversation_id}] An unexpected error occurred while extracting from URL {file_url}: {e}")
         return None
 
-
 def process_rag_request(msg: Dict[str, Any]) -> Dict[str, Any]:
     """
     This function receives the input message from RabbitMQ,
@@ -96,43 +95,49 @@ def process_rag_request(msg: Dict[str, Any]) -> Dict[str, Any]:
     """
     conversation_id = msg.get("conversation_id", "unknown_id")
     rag_output_summary = ""
-    transcribed_content = "" # This will hold the text for your RAG pipeline
+    transcribed_content = ""
+    additional_content = None # Initialize additional_content
 
     file_url = msg.get("file_url")
-    user_prompts = [] # To capture any user prompt in the 'input' array if needed
+    user_prompts = []
 
-    # Prioritize transcription from file_url
+    # First, extract additional content from the 'input' array if it exists.
+    if "input" in msg and isinstance(msg["input"], list):
+        for item in msg["input"]:
+            if isinstance(item, dict) and item.get("role") == "user" and "content" in item:
+                # Capture the user prompt content for the 'additional_content' parameter
+                user_prompts.append(item["content"])
+        if user_prompts:
+            # Join all user prompts into a single string for the 'additional_content'
+            additional_content = " ".join(user_prompts)
+            print(f"[{conversation_id}] Extracted user content for 'additional_content'.")
+            print(f"[{conversation_id}] The value of `additional_content` is: {additional_content}")
+    
+    # Next, handle the main transcription content from the file_url.
     if file_url:
         transcribed_content = fetch_and_extract_text_from_url(file_url, conversation_id)
         if transcribed_content:
             print(f"[{conversation_id}] Using transcribed content from file_url (excerpt: {transcribed_content[:200]}...).")
         else:
-            print(f"[{conversation_id}] Could not fetch/extract text from file_url. Checking 'input' array as fallback.")
-
-    # As a fallback, or if 'input' contains a different kind of prompt
-    # The rag_prompt example had: input: [ { "role": "user", "content": "prompt" } ]
-    # If this 'prompt' is *also* part of the conversation or a standalone input, handle it.
-    # For now, let's assume if file_url doesn't yield content, this is the main input.
-    if not transcribed_content and "input" in msg and isinstance(msg["input"], list):
-        for item in msg["input"]:
-            if isinstance(item, dict) and item.get("role") == "user" and "content" in item:
-                user_prompts.append(item["content"])
-        transcribed_content = " ".join(user_prompts) if user_prompts else ""
+            print(f"[{conversation_id}] Could not fetch/extract text from file_url.")
+    else:
+        # If no file_url is provided, use the user_prompts as the main content.
+        # This is a fallback and separates the concerns.
+        transcribed_content = additional_content
         if transcribed_content:
-            print(f"[{conversation_id}] Using transcribed content from 'input' array (excerpt: {transcribed_content[:200]}...).")
+            print(f"[{conversation_id}] No file_url provided. Using 'input' content as main transcription.")
         else:
-            print(f"[{conversation_id}] No 'content' found in 'input' array.")
-
+            print(f"[{conversation_id}] No 'file_url' or 'input' content found.")
 
     if not transcribed_content:
         rag_output_summary = "Error: No transcription content found from file_url or input array."
         print(f"[{conversation_id}] Error: {rag_output_summary}")
     else:
         try:
-            # Call run_retrieval_and_generation_pipeline function
-            # It expects a string for 'transcribed_conversation'
+            # Call run_retrieval_and_generation_pipeline with both parameters
             summary = run_retrieval_and_generation_pipeline(
-                transcribed_conversation=transcribed_content
+                transcribed_conversation=transcribed_content,
+                additional_content=additional_content # Pass the extracted additional content here
             )
 
             if summary:
@@ -146,7 +151,6 @@ def process_rag_request(msg: Dict[str, Any]) -> Dict[str, Any]:
             rag_output_summary = f"Error during RAG processing: {e}"
             print(f"[{conversation_id}] Error during RAG processing: {e}")
 
-    # Construct the output message as per the 'inference_result' structure
     output_message = {
         "conversation_id": conversation_id,
         "result": rag_output_summary
@@ -156,10 +160,7 @@ def process_rag_request(msg: Dict[str, Any]) -> Dict[str, Any]:
 def wait_for_services():
     """Wait for dependent services to be ready"""
     print("Waiting for dependent services to be ready...")
-    
-    # Add any service health checks here if needed
-    # For example, you might want to check if ChromaDB is ready
-    time.sleep(10)  # Simple wait, you could make this more sophisticated
+    time.sleep(10)  # Simple wait
     
     print("Services should be ready now.")
 
@@ -183,7 +184,7 @@ def main():
                     host=RABBITMQ_HOST,
                     port=RABBITMQ_PORT,
                     credentials=credentials,
-                    heartbeat=120 # Recommended for long-lived connections
+                    heartbeat=120 
                 )
             )
             print("Successfully connected to RabbitMQ!")
