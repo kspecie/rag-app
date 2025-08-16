@@ -60,13 +60,11 @@ export function DocumentUploader({
 
 
     try {
-      const response = await fetch("http://localhost:8006/documents/upload/", {
+      const response = await fetch("http://localhost:8006/api/documents/upload/", {
         method: "POST",
         body: formData,
         headers: {
           'X-API-Key': API_KEY, 
-          // 'Content-Type': 'multipart/form-data' is typically NOT needed for FormData
-          // as the browser sets it correctly with the boundary.
         },
       });
 
