@@ -20,8 +20,8 @@ NICE_API_BASE_URL = "https://api.nice.org.uk"
 
 # Chunking settings
 # Use a reasonable token limit. With k=1, this should fit within the LLM's context window.
-MAX_CHUNK_TOKENS = 600
-OVERLAP_TOKENS = 50
+MAX_CHUNK_TOKENS = 450
+OVERLAP_TOKENS = 150
 
 class DocumentProcessor:
     def __init__(self):
@@ -270,14 +270,14 @@ class DocumentProcessor:
             print(f"Error parsing JSON from {doc_uri}: {e}")
             return ""
 
-def index_nice_knowledge_hierarchical():
+def index_nice_knowledge():
     try:
         processor = DocumentProcessor()
     except Exception as e:
         print(f"Error initializing DocumentProcessor: {e}")
         return
 
-    collection_name = "nice_knowledge_hierarchical"
+    collection_name = "nice_knowledge"
     
     try:
         processor.chroma_client.get_collection(name=collection_name)
@@ -356,7 +356,7 @@ def index_nice_knowledge_hierarchical():
         except Exception as e:
             print(f"Error ingesting final batch: {e}")
             
-    print("\nIndexing complete! The 'nice_knowledge_hierarchical' collection is ready to use.")
+    print("\nIndexing complete! The 'nice_knowledge' collection is ready to use.")
 
 def fetch_nice_guidance_index():
     print("Fetching NICE guidance index from API...")
@@ -394,4 +394,4 @@ def fetch_nice_guidance_index():
         return []
 
 if __name__ == "__main__":
-    index_nice_knowledge_hierarchical()
+    index_nice_knowledge()
