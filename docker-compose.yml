@@ -75,7 +75,7 @@ services:
       HABANA_VISIBLE_DEVICES: "all"
       OMPI_MCA_btl_vader_single_copy_mechanism: "none"
       HF_TOKEN: "${HF_TOKEN}"
-      MAX_INPUT_TOKENS: "5000"
+      MAX_INPUT_TOKENS: "6000"
       MAX_TOTAL_TOKENS: "8000"
     ports:
       - "8005:80"

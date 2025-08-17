@@ -28,7 +28,7 @@ def clean_document_content(documents: List[Document]) -> List[Document]:
 
 def split_documents_into_chunks(
     documents: List[Document],
-    chunk_size: int = 550,
+    chunk_size: int = 450,
     chunk_overlap: int = 150,
     add_start_index: bool = True
 ) -> List[Document]:
