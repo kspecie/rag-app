@@ -24,6 +24,8 @@ from app.core.pipeline import run_retrieval_and_generation_pipeline
 # Import the documents router
 from app.backend.api.documents import router as documents_router
 
+#import collections router
+from app.backend.api.collections import router as collections_router
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,8 +70,10 @@ app.add_middleware(
     allow_headers=["*"],    # Allow all headers, including your custom 'X-API-Key'
 )
 
-# Include the documents router with API key dependency
+
 app.include_router(documents_router, dependencies=[Depends(get_api_key)])
+app.include_router(collections_router, dependencies=[Depends(get_api_key)])
+
 
 @app.get("/")
 async def read_root():

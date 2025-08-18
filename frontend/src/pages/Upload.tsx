@@ -207,6 +207,7 @@ const UploadPage: React.FC = () => {
     ]);
 
     const API_BASE = "http://localhost:8006/documents"; //FastAPI URL
+    const COLLECTIONS_API = `http://localhost:8006/collections`;
 
     //fetch docs on page load
     useEffect(() => {
@@ -297,6 +298,39 @@ const handleDeleteCollectionByName = async (collectionId: string) => {
     toast.error(`Error deleting ${collectionId} collection`);
   }
 };
+
+const handleUpdateCollectionByName = async (collectionId: string) => {
+  const collectionEndpoints: Record<string, string> = {
+    nice: "update_nice",
+    miriad: "update_miriad",
+  };
+  const endpointSuffix = collectionEndpoints[collectionId];
+  if (!endpointSuffix) {
+    toast.error(`No update endpoint defined for collection ${collectionId}`);
+    return;
+  }
+
+  const endpoint = `${COLLECTIONS_API}/${endpointSuffix}`;
+  
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": import.meta.env.VITE_API_KEY
+      }
+    });
+    if (res.ok){
+      toast.success(`${collectionId} collection uploaded successfully`)
+    } else {
+      const err = await res.json();
+      toast.error(err.detail || `Failed to upload ${collectionId} collection`)
+    }
+  } catch (e) {
+    toast.error(`Error updating ${collectionId} collection`)
+  }
+};
+
     return (
         <div className="flex flex-col items-center w-full min-h-[calc(100vh-theme(spacing.24))] py-8 px-4 max-w-4xl mx-auto">
 
@@ -366,7 +400,7 @@ const handleDeleteCollectionByName = async (collectionId: string) => {
                                 </Button>
                                 <Button
                                     className="bg-[#005EB8] text-white hover:bg-blue-700"
-                                    onClick={() => handleUpdateOther(collection.id)}
+                                    onClick={() => handleUpdateCollectionByName(collection.id)}
                                 >
                                     Update
                                 </Button>
