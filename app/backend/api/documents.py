@@ -37,7 +37,6 @@ def list_user_documents() -> List[Dict[str, Any]]:
         file_map = {}
 
         for meta in results["metadatas"]:
-            print("DEBUG META:", meta)
             if not meta:
                 continue
             source = meta.get("source", "unknown_source")

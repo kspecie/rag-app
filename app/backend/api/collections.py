@@ -91,7 +91,8 @@ def update_miriad() -> Dict[str, str]:
     if current_batch_docs:
         embeddings = tei_embedding_function(current_batch_docs)
         collection.add(documents=current_batch_docs, embeddings=embeddings, ids=current_batch_ids)
-
+    collection.update(metadata={"last_updated": datetime.utcnow().isoformat()})
+    
     return {"message": f"Indexing complete! Total chunks added: {document_counter}"}
 
 
