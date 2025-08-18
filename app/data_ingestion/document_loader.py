@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List
 from langchain_community.document_loaders import DirectoryLoader, TextLoader, PyPDFLoader
 from langchain.schema import Document
+from datetime import datetime
 
 def load_documents(directory_path: str) -> List[Document]:
     """
@@ -58,6 +59,7 @@ def load_documents(directory_path: str) -> List[Document]:
                 # Inject filename into metadata
                 for doc in docs:
                     doc.metadata["file_name"] = file_path.name
+                    doc.metadata["upload_date"] = datetime.now().isoformat()
                     loaded_documents.append(doc)
 
             except Exception as e:
