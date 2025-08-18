@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DocumentUploader } from "../components/ui/upload";
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import {
     Table,
     TableBody,
@@ -9,6 +9,7 @@ import {
     TableHeader,
     TableRow,
   } from '../components/ui/table';
+import { Button } from '../components/ui/button'
 
 interface UploadedFile {
     id: string;
@@ -18,27 +19,72 @@ interface UploadedFile {
 
 const UploadPage: React.FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const API_BASE = "http://localhost:8006/documents"; //FastAPI URL
+
+  //fetch docs on page load
+  useEffect(() => {
+    fetch(API_BASE, {
+      headers: {
+        "X-API-Key": import.meta.env.VITE_API_KEY
+      }})
+      .then(res => res.json())
+      .then(data => {
+        console.log("Fetched docs:", data);
+        const formattedFiles = data.map((doc:any) => ({
+          id: doc.id,
+          title: doc.title,
+          uploadDate: doc.upload_date
+            ? new Date(doc.upload_date).toLocaleDateString()
+            : "Unknown",
+        }));
+          setUploadedFiles(formattedFiles);
+      })
+      .catch(err => console.error("error fetching docs from chromabdb:", err));
+    }, []);
+  
 
   const handleUploadSuccess = (fileInfo: any) => {
+    console.log("Upload response from backend:", fileInfo);
     console.log("File uploaded successfully to backend:", fileInfo);
     console.log("1. File info received by UploadPage for adding to table:", fileInfo);
 
     const newFile: UploadedFile = {
       id: fileInfo.id || new Date().getTime().toString(),
       title: fileInfo.filename || 'Unknown File',
-      uploadDate: new Date().toLocaleDateString(),
+      uploadDate: new Date(fileInfo.upload_date || Date.now()).toLocaleDateString(),
     };
 
-    setUploadedFiles(prevFiles => {
-      const newState = [...prevFiles, newFile];
-      console.log("2. New uploadedFiles state after adding:", newState);
-      return newState;
-    });
+    // setUploadedFiles(prevFiles => {
+    //   const newState = [...prevFiles, newFile];
+    //   console.log("2. New uploadedFiles state after adding:", newState);
+    //   return newState;
+    // });
+    setUploadedFiles(prevFiles => [...prevFiles, newFile]);
   };
 
   const handleUploadError = (error: string) => {
     console.error("File upload failed:", error);
   };
+
+  const handleDeleteCollection = async () => {
+    if(!window.confirm("Are you sure you want to delete ALL documents? This cannot be undone.")) return;
+    try {
+      const res = await fetch(API_BASE + "/collections/user", {
+        method: "DELETE",
+        headers: {
+          "X-API-Key": import.meta.env.VITE_API_KEY
+        }});
+        if (res.ok){
+          toast.success("Collection deleted successfully");
+          setUploadedFiles([]);
+        } else {
+          const err = await res.json();
+          toast.error(err.detail || "Failed to delete collection");
+        }
+      } catch (e) {
+        toast.error("Error deleting collection");
+      }
+    };
 
   return (
 
@@ -52,6 +98,14 @@ const UploadPage: React.FC = () => {
         onUploadSuccess={handleUploadSuccess}
         onUploadError={handleUploadError}
       />
+      {/*Delete button*/}
+      {uploadedFiles.length > 0 && (
+        <div className="mt-6">
+          <Button variant="destructive" onClick={handleDeleteCollection}>
+            Delete All Documents
+          </Button>
+        </div>
+      )}
 
       {/* Table Section */}
       {uploadedFiles.length > 0 && (

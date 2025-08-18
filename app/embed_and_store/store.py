@@ -29,12 +29,18 @@ def store_chunks_in_chroma(
             source = item["metadata"].get("source", "unknown_source")
             chunk_id = f"{source}_chunk_{i}"
 
+            # Ensure upload_date exists in metadata
+            if "upload_date" not in item["metadata"]:
+                item["metadata"]["upload_date"] = datetime.utcnow().isoformat()
+            
             ids.append(chunk_id)
             documents.append(item["text"])
             metadatas.append(item["metadata"])
             embeddings.append(item["embedding"])
+
         print("CHUNK IDS:", ids)
         print("METADATAS:", metadatas)
+        
         # Add to ChromaDB
         collection.add(
             documents=documents,
