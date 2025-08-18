@@ -95,43 +95,13 @@ def update_miriad() -> Dict[str, str]:
     return {"message": f"Indexing complete! Total chunks added: {document_counter}"}
 
 
-
 @router.post("/update_nice")
-def update_nice() -> dict:
-    collection_name = "nice_knowledge"
+def refresh_nice_index():
+    """Fetch all NICE guidance and store it in ChromaDB."""
     try:
-        chroma_client.get_collection(name=collection_name)
-        return {"message": f"Collection '{collection_name}' already exists. Skipping indexing."}
-    except chromadb.errors.NotFoundError:
-        collection = chroma_client.create_collection(
-            name=collection_name,
-            embedding_function=embedding_functions.SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL)
-        )
-
-    try:
-        dataset = load_dataset("nice/nice-5.8M", split="train[:20000]")  # adjust as needed
+        indexed_docs = index_nice_knowledge()  # calls the API, processes, stores
+        return {"status": "success", "indexed_documents": len(indexed_docs)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to load NICE dataset: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    current_batch_docs = []
-    current_batch_ids = []
-    document_counter = 0
-
-    for i, row in enumerate(dataset):
-        document = f"Context: {row['context']}\nAnswer: {row['answer']}"
-        chunks = tokenize_and_chunk(document, MAX_CHUNK_TOKENS, CHUNK_OVERLAP_TOKENS)
-        for j, chunk in enumerate(chunks):
-            doc_id = f"nice_{i}_chunk_{j}"
-            current_batch_docs.append(chunk)
-            current_batch_ids.append(doc_id)
-            document_counter += 1
-            if len(current_batch_docs) >= MAX_DOCS_PER_BATCH:
-                embeddings = tei_embedding_function(current_batch_docs)
-                collection.add(documents=current_batch_docs, embeddings=embeddings, ids=current_batch_ids)
-                current_batch_docs, current_batch_ids = [], []
-
-    if current_batch_docs:
-        embeddings = tei_embedding_function(current_batch_docs)
-        collection.add(documents=current_batch_docs, embeddings=embeddings, ids=current_batch_ids)
-
-    return {"message": f"Indexing complete! Total chunks added: {document_counter}"}
+    return {"message": f"Indexing complete!"}
