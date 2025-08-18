@@ -6,7 +6,10 @@ from typing import List, Dict, Any
 from datetime import datetime
 
 from app.core.pipeline import run_ingestion_pipeline, run_embedding_and_storage_pipeline
+
 USER_UPLOAD_COLLECTION = "documents"
+MIRIAD_COLLECTION = "miriad_knowledge"
+NICE_COLLECTION = "nice_knowledge"
 
 router = APIRouter(
     prefix="/documents", # All endpoints in this router will start with /documents
@@ -44,7 +47,11 @@ def list_user_documents() -> List[Dict[str, Any]]:
                     "id": source,  # use filename as ID
                     "title": source,
                     "uploadDate": upload_date or "unknown",
-                }
+                } 
+            else:
+                if file_map[source]["uploadDate"] == "unknown" and upload_date:
+                    file_map[source]["uploadDate"] = upload_date
+
 
         return list(file_map.values())
 
@@ -142,5 +149,31 @@ def delete_user_upload_collection():
         client = get_client()
         client.delete_collection(name=USER_UPLOAD_COLLECTION)
         return {"message": f"Collection '{USER_UPLOAD_COLLECTION} deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/collections/miriad")
+def delete_miriad_collection():
+    """
+    Delete the entire MiRIAD ChromaDB collection
+    """
+    try:
+        client = get_client()
+        client.delete_collection(name=MIRIAD_COLLECTION)
+        return {"message": f"Collection '{MIRIAD_COLLECTION}' deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/collections/nice")
+def delete_nice_collection():
+    """
+    Delete the entire NICE ChromaDB collection
+    """
+    try:
+        client = get_client()
+        client.delete_collection(name=NICE_COLLECTION)
+        return {"message": f"Collection '{NICE_COLLECTION}' deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
