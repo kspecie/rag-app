@@ -26,6 +26,7 @@ services:
       - tei_service
       - chromadb_service
       - tgi_service
+      - sql_db
     working_dir: /rag-app
     # command: ["/bin/bash"]
     # entrypoint: ["/bin/bash", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000"]
@@ -143,7 +144,19 @@ services:
       - tgi_service
     working_dir: /rag-app
     # entrypoint: ["python3", "app/consumers/rabbitmq_consumer.py"]
-    restart: "no"   
+    restart: "no"  
+
+  sql_db:
+    image: postgres:13-alpine  # Use a lightweight official PostgreSQL image
+    container_name: postgres_db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data 
+
 volumes:
   chroma_data:
   rabbitmq_data:
+  postgres_data:

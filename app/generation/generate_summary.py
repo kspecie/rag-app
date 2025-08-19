@@ -1,6 +1,8 @@
 import requests
 import json
 from typing import List, Dict, Any, Optional
+from scripts.save_summary import save_summary_to_db
+import uuid
 
 def generate_summary(
     transcribed_conversation: str,
@@ -42,83 +44,47 @@ def generate_summary(
     extra_notes = ""
     if additional_content and additional_content.strip():
         extra_notes = f"\n\n**Additional User Notes:**\n{additional_content.strip()}\n"
-    # Example of a structured prompt for a clinical summary
-    # prompt = f"""
-    # You are an AI assistant specialized in medical summarization. Your task is to generate a concise, templated clinical summary based on the provided patient conversation (context) and the user's query.
 
-    # **Example of desired output format:**
-    # Presenting complaint: Patient reports a cough.
-    # History of presenting complaint: Cough started 3 days ago, non-productive.
-    # Family history: High cholesterol runs in the family.
-    # Past surgical history: Information not provided.
-
-    # Template to follow is below
     
-    # Presenting complaint:
-    # History of presenting complaint:
-    # Review of systems:
-    # Past medical history:
-    # Past surgical history:
-    # Drug history:
-    # Family history:
-    # Social history:
-    # Observation:
-    # Assessment:
-    # Clinical impression/Differential diagnosis:
-    # Plan of Action:
-
-    # **Patient Doctor Conversation:**
-    # {transcribed_conversation}
-    # {context}
-
-    # Please generate the clinical summary. Do not make up any information.
-    # If there is no relevant information for a section, you MUST output the section title followed by "Information not provided.".
-    # For example, if no information is available for "Past surgical history", you would write:
-    # Past surgical history: Information not provided.
-
-    # Ensure ALL section titles from the template are present in your final summary.
-    # """
     prompt = f"""
-    You are an AI assistant specialized in medical summarization. Your task is to generate a concise, templated clinical summary based on the provided patient conversation (context) and the user's query.
 
-    **VERY IMPORTANT: The entire summary MUST be formatted using Markdown.**
-    **Use bolding for ALL section titles (e.g., **Presenting complaint:**).**
-    **Use bullet points for lists where appropriate (e.g., Review of systems).**
-    **Use double newlines (empty lines) between each section to ensure proper paragraph breaks in Markdown.**
+    ### Instruction
+    I am a medical doctor and I need you to generate a concise, templated History and Physical (H&P) clinical summary based on the provided patient-doctor conversation (transcribed_conversation). Include any extra information (extra_notes) and leverage any relevant information (context).
 
-    **Example of desired output format:**
-    **Presenting complaint:** Patient reports a cough.\n\n
-    **History of presenting complaint:** Cough started 3 days ago, non-productive.\n\n
-    **Family history:** High cholesterol runs in the family.\n\n
-    **Past surgical history:** Information not provided.\n\n
+    ###
 
+    Example of desired output format:
+        **Presenting complaint:** Patient reports a cough.
+        **History of presenting complaint:** Cough started 3 days ago, non-productive.
+        **Family history:** High cholesterol runs in the family.
+        **Past surgical history:** Information not provided.
 
-    **Template to follow is below (ensure ALL titles are bolded and followed by double newlines):**
-    **Presenting complaint:**\n\n
-    **History of presenting complaint:**\n\n
-    **Review of systems:**\n\n
-    **Past medical history:**\n\n
-    **Past surgical history:**\n\n
-    **Drug history:**\n\n
-    **Family history:**\n\n
-    **Social history:**\n\n
-    **Observation:**\n\n
-    **Assessment:**\n\n\
-    **Clinical impression/Differential diagnosis:**\n\n
-    **Plan of Action:**\n\n
-    
+    Template to follow is below (ALL titles are bolded):
+        **Presenting Complaint:**
+        **History of Presenting Complaint:**
+        **Review of Systems:**
+        **Past Medical History:**
+        **Past Surgical History:**
+        **Drug History:**
+        **Family History:**
+        **Social History:**
+        **Observation:**
+        **Assessment:**
+        **Clinical Impression/Differential Diagnosis:**
+        **Plan of Action:**
 
-    **Patient Doctor Conversation:**
+    Input Data:
     {transcribed_conversation}
     {extra_notes}
     {context}
 
-    Please generate the clinical summary following the exact template and formatting instructions. Do not make up any information.
-    If there is no relevant information for a section, you MUST output the section title (bolded) followed by "Information not provided.".
-    For example, if no information is available for "Past surgical history", you would write:
-    **Past surgical history:** Information not provided.\n\n
+    Important instructions for output:
+        • Do not makeup any information
+        • If no relevant information is available for a section, output the section title (bolded) followed by: "Information not provided."
+            ○ Example:
+                § **Past Surgical History:** Information not provided.
+        • Ensure all section titles from the template are included in the generated summary and bolded.
 
-    Ensure ALL section titles from the template are present in your final summary and bolded.
     """
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -137,15 +103,22 @@ def generate_summary(
         response = requests.post(f"{tgi_service_url}/generate", headers=headers, data=json.dumps(payload))
         
         print(f"TGI Response Status Code: {response.status_code}")
-        print(f"TGI Raw Response Text: {response.text}")
+        #print(f"TGI Raw Response Text: {response.text}")
         
         response.raise_for_status() # Raise an exception for HTTP errors
 
         response_data = response.json()
-        print(f"TGI Parsed JSON Response: {json.dumps(response_data, indent=2)}")
+        #print(f"TGI Parsed JSON Response: {json.dumps(response_data, indent=2)}")
         if isinstance(response_data, dict) and 'generated_text' in response_data:
             # TGI typically returns a list of results, each with 'generated_text'
             generated_text = response_data["generated_text"]
+            summary_id = str(uuid.uuid4())
+            summary_data = {
+                'id': summary_id,
+                'title': 'Clinical Summary',
+                'content': generated_text
+            }
+            save_summary_to_db(summary_data)
             return generated_text
         else:
             print("TGI service returned an unexpected response format.")

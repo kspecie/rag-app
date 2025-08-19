@@ -1,5 +1,6 @@
 import os
 import chromadb
+from chromadb import Client
 
 def list_collections_and_documents_with_content():
     """
@@ -36,7 +37,7 @@ def list_collections_and_documents_with_content():
                 print(" - Documents:")
                 for doc_id, doc_content in zip(ids, documents):
                     print(f"   - ID: {doc_id}")
-                    print(f"     Content: {doc_content[:50]}...")
+                    print(f"     Content: {doc_content[:500]}...")
             else:
                 print(" - No documents found in this collection.")
 
