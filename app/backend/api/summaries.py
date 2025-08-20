@@ -20,4 +20,4 @@ async def generate_summary_endpoint(transcribed_conversation: str):
     if summary is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate summary.")
 
-    return {"summary", summary}
+    return {"summary": summary}

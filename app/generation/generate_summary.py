@@ -29,16 +29,26 @@ def generate_summary(
     if not transcribed_conversation.strip():
         return "No transcribed conversation provided to generate a summary."
 
-    # Construct the prompt for the LLM.
-    context = "\n".join([chunk["page_content"] for chunk in relevant_knowledge_chunks])
-    if context: 
-        context = f"""
-        ---Relevant Clinical Guidelines/Knowledge---
-        {context}
-        ---End Relevant Clinical Guidelines/Knowledge---
-        """
+    # Clean and join the relevant chunks
+    context_chunks = [chunk.get("page_content", "").strip() for chunk in relevant_knowledge_chunks if chunk.get("page_content")]
+    if context_chunks:
+        context = "---Relevant Clinical Guidelines/Knowledge---\n"
+        context += "\n".join(context_chunks)
+        context += "\n---End Relevant Clinical Guidelines/Knowledge---"
     else:
-        context = "No specific external clinical guidelines were returned"
+        context = "No specific external clinical guidelines were returned."
+
+
+    # Construct the prompt for the LLM.
+    # context = "\n".join([chunk["page_content"] for chunk in relevant_knowledge_chunks])
+    # if context: 
+    #     context = f"""
+    #     ---Relevant Clinical Guidelines/Knowledge---
+    #     {context}
+    #     ---End Relevant Clinical Guidelines/Knowledge---
+    #     """
+    # else:
+    #     context = "No specific external clinical guidelines were returned"
 
 
     extra_notes = ""
@@ -49,8 +59,7 @@ def generate_summary(
     prompt = f"""
 
     ### Instruction
-    I am a medical doctor and I need you to generate a concise, templated History and Physical (H&P) clinical summary based on the provided patient-doctor conversation (transcribed_conversation). Include any extra information (extra_notes) and leverage any relevant information (context).
-
+    I am a medical doctor and I need you to generate a concise, templated History and Physical (H&P)clinical summary based on the provided patient-doctor conversation (transcribed_conversation). Use information that is relevant from the transcribed_conversation. Include any extra information (extra_notes) and leverage any additional guidance and relevant information (context).
     ###
 
     Example of desired output format:
@@ -59,7 +68,7 @@ def generate_summary(
         **Family history:** High cholesterol runs in the family.
         **Past surgical history:** Information not provided.
 
-    Template to follow is below (ALL titles are bolded):
+    Exact template to follow is below (ALL titles are bolded):
         **Presenting Complaint:**
         **History of Presenting Complaint:**
         **Review of Systems:**
@@ -80,10 +89,13 @@ def generate_summary(
 
     Important instructions for output:
         • Do not makeup any information
+        • Use the exact template provided above.
         • If no relevant information is available for a section, output the section title (bolded) followed by: "Information not provided."
-            ○ Example:
-                § **Past Surgical History:** Information not provided.
+            Example:
+                **Past Surgical History:** Information not provided.
         • Ensure all section titles from the template are included in the generated summary and bolded.
+        • Use bullet points for lists where appropriate (e.g., Review of systems).
+
 
     """
     headers = {"Content-Type": "application/json"}

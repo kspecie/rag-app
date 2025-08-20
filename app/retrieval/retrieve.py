@@ -56,7 +56,7 @@ def retrieve_relevant_chunks(
         # Return only the top n_results from the combined, sorted list
         final_chunks = all_retrieved_chunks[:n_results]
 
-        print(f"✅ Found and re-ranked {len(final_chunks)} total chunks across collections.")
+        print(f"Found and re-ranked {len(final_chunks)} total chunks across collections.")
         return final_chunks
 
     except Exception as e:

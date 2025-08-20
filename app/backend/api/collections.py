@@ -53,6 +53,7 @@ def tokenize_and_chunk(text: str, max_tokens: int, overlap: int):
         if start < 0:
             start = 0
     return chunks
+    
 
 @router.post("/update_miriad")
 def update_miriad() -> Dict[str, str]:
