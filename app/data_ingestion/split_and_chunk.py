@@ -54,10 +54,10 @@ def split_documents_into_chunks(
         doc_chunks = text_splitter.split_documents([doc])
 
         for chunk in doc_chunks:
-            # ✅ Preserve all parent metadata
+            #Preserve all parent metadata
             chunk.metadata = {**doc.metadata, **chunk.metadata}
 
-            # ✅ Ensure 'source' is set to filename
+            # Ensure 'source' is set to filename
             if "source" not in chunk.metadata and "file_name" in chunk.metadata:
                 chunk.metadata["source"] = chunk.metadata["file_name"]
 
@@ -65,41 +65,3 @@ def split_documents_into_chunks(
 
     print(f"Original documents split into {len(all_splits)} chunks.")
     return all_splits
-
-#     all_splits = text_splitter.split_documents(documents)
-
-#     for chunk in all_splits:
-#         if "source" not in chunk.metadata and "file_name" in chunk.metadata:
-#             chunk.metadata["source"] = chunk.metadata["file_name"]
-
-#         if "upload_date" not in chunk.metadata and "file_name" in chunk.metadata:
-#             # Find matching doc by filename
-#             parent_doc = next((doc for doc in documents if doc.metadata.get("file_name") == chunk.metadata["file_name"]), None)
-#             if parent_doc and "upload_date" in parent_doc.metadata:
-#                 chunk.metadata["upload_date"] = parent_doc.metadata["upload_date"]
-
-#     print(f"Original documents split into {len(all_splits)} chunks.")
-#     return all_splits
-
-
-# if __name__ == "__main__":
-   
-#     if loaded_docs:
-#         print(f"\n--- Documents loaded successfully. Proceeding to split ---")
-#         cleaned_docs = [clean_document_content(doc) for doc in loaded_docs]
-#         print(f"Documents have been cleaned. Proceeding to split...")
-#         chunks = split_documents_into_chunks(cleaned_docs)
-
-#         # Print some details of the first few chunks
-#         if chunks:
-#             for i, chunk in enumerate(chunks[:5]): # Print details for up to 5 chunks
-#                 print(f"\n--- Chunk {i+1} (Length: {len(chunk.page_content)}) ---")
-#                 print(f"Content:\n{chunk.page_content}")
-#                 print(f"Metadata: {chunk.metadata}")
-#                 if "start_index" in chunk.metadata:
-#                     print(f"Start Index: {chunk.metadata['start_index']}")
-#         else:
-#             print("No chunks were generated.")
-#     else:
-#         print("no documents to split")
-    

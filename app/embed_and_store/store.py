@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 import chromadb
 from chromadb.utils import embedding_functions
+from  datetime import datetime
 
 def store_chunks_in_chroma(
     embedded_chunks: List[Dict[str, Any]],
@@ -38,7 +39,7 @@ def store_chunks_in_chroma(
             metadatas.append(item["metadata"])
             embeddings.append(item["embedding"])
 
-        print("CHUNK IDS:", ids)
+        #print("CHUNK IDS:", ids)
         print("METADATAS:", metadatas)
         
         # Add to ChromaDB
