@@ -57,46 +57,54 @@ def generate_summary(
 
     
     prompt = f"""
+        ###
 
-    ### Instruction
-    I am a medical doctor and I need you to generate a concise, templated History and Physical (H&P)clinical summary based on the provided patient-doctor conversation (transcribed_conversation). Use information that is relevant from the transcribed_conversation. Include any extra information (extra_notes) and leverage any additional guidance and relevant information (context).
-    ###
+        Instruction:
+        I am a medical doctor and I need you to generate a concise, templated History and Physical (H&P) clinical summary based on the provided patient-doctor conversation (transcribed_conversation).  Summarize only what is relevant from the transcribed conversation.
 
-    Example of desired output format:
-        **Presenting complaint:** Patient reports a cough.
-        **History of presenting complaint:** Cough started 3 days ago, non-productive.
-        **Family history:** High cholesterol runs in the family.
-        **Past surgical history:** Information not provided.
+        ###
+        
+        Formatting requirements (strictly enforce these):
+            • All section titles must be bolded (e.g., **Presenting complaint:**)
+            • Use bullet points for lists where appropriate (e.g., Review of systems).
+            • Use double newlines (empty lines) between each section to ensure proper paragraph breaks in Markdown.
 
-    Exact template to follow is below (ALL titles are bolded):
-        **Presenting Complaint:**
-        **History of Presenting Complaint:**
-        **Review of Systems:**
-        **Past Medical History:**
-        **Past Surgical History:**
-        **Drug History:**
-        **Family History:**
-        **Social History:**
-        **Observation:**
-        **Assessment:**
-        **Clinical Impression/Differential Diagnosis:**
-        **Plan of Action:**
-
-    Input Data:
-    {transcribed_conversation}
-    {extra_notes}
-    {context}
-
-    Important instructions for output:
-        • Do not makeup any information
-        • Use the exact template provided above.
-        • If no relevant information is available for a section, output the section title (bolded) followed by: "Information not provided."
-            Example:
-                **Past Surgical History:** Information not provided.
-        • Ensure all section titles from the template are included in the generated summary and bolded.
-        • Use bullet points for lists where appropriate (e.g., Review of systems).
+        Template to follow is below (ALL titles are bolded.):
+            **Presenting Complaint:**
+            **History of Presenting Complaint:**
+            **Review of Systems:**
+            **Past Medical History:**
+            **Past Surgical History:**
+            **Drug History:**
+            **Family History:**
+            **Social History:**
+            **Observation:**
+            **Assessment:**
+            **Clinical Impression/Differential Diagnosis:**
+            **Plan of Action:**
 
 
+            Example of desired output format:
+                **Presenting complaint:** Patient reports a cough.
+                **History of presenting complaint:** Cough started 3 days ago, non-productive.
+                **Family history:** High cholesterol runs in the family.
+                **Past surgical history:** Information not provided.
+
+
+        Input Data:
+        {transcribed_conversation}
+        {extra_notes}
+        {context}
+
+
+        Important instructions for output:
+                • Do not makeup any information
+                • Use the exact template provided above.
+                • If no relevant information is available for a section, output the section title (bolded) followed by: "Information not provided."
+                    Example:
+                        **Past Surgical History:** Information not provided.
+                • Ensure all section titles from the template are included in the generated summary and bolded.
+                • Use bullet points for lists where appropriate (e.g., Review of systems).
     """
     headers = {"Content-Type": "application/json"}
     payload = {
