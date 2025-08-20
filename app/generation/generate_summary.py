@@ -57,19 +57,21 @@ def generate_summary(
 
     
     prompt = f"""
+         ### Instruction
+        I am a medical doctor and you specialize in medical summarization. Your task is to generate a concise, templated History and Physical (H&P) clinical summary based on the provided patient-doctor conversation (transcribed_conversation) and
+        the user's query. Leverage relevant information from (context) for writing H&P clinincal summaries and applying relevant medical information.
         ###
 
-        Instruction:
-        I am a medical doctor and I need you to generate a concise, templated History and Physical (H&P) clinical summary based on the provided patient-doctor conversation (transcribed_conversation).  Summarize only what is relevant from the transcribed conversation.
+       IMPORTANT:
+        ALL section titles must be bolded and should match the exact section names in the template below.
+        Only include section titles that are listed in the template provided below.
+        Use bullet points for lists where appropriate (e.g., Review of Systems).
+        Do not makeup any information.
+        If no relevant information is available for a section, you MUST still output the section title (bolded) followed by: "Information not provided."
+          Example: **Past Surgical History:** Information not provided.
 
-        ###
-        
-        Formatting requirements (strictly enforce these):
-            • All section titles must be bolded (e.g., **Presenting complaint:**)
-            • Use bullet points for lists where appropriate (e.g., Review of systems).
-            • Use double newlines (empty lines) between each section to ensure proper paragraph breaks in Markdown.
-
-        Template to follow is below (ALL titles are bolded.):
+        TEMPLATE:
+        Follow the template below (only include sections listed below):
             **Presenting Complaint:**
             **History of Presenting Complaint:**
             **Review of Systems:**
@@ -83,29 +85,24 @@ def generate_summary(
             **Clinical Impression/Differential Diagnosis:**
             **Plan of Action:**
 
-
-            Example of desired output format:
-                **Presenting complaint:** Patient reports a cough.
-                **History of presenting complaint:** Cough started 3 days ago, non-productive.
-                **Family history:** High cholesterol runs in the family.
-                **Past surgical history:** Information not provided.
-
-
+        Example of desired output format:
+            **Presenting Complaint:** Patient reports a cough.
+            **History of Presenting Complaint:** Cough started 3 days ago, non-productive.
+            **Family History:** High cholesterol runs in the family.
+            **Past Surgical History:** Information not provided.
+        
         Input Data:
+        **Patient Doctor Conversation:**
         {transcribed_conversation}
-        {extra_notes}
-        {context}
 
+        **Relevant External Information:**
+        {context}
+        {extra_notes}
 
         Important instructions for output:
-                • Do not makeup any information
-                • Use the exact template provided above.
-                • If no relevant information is available for a section, output the section title (bolded) followed by: "Information not provided."
-                    Example:
-                        **Past Surgical History:** Information not provided.
-                • Ensure all section titles from the template are included in the generated summary and bolded.
-                • Use bullet points for lists where appropriate (e.g., Review of systems).
-    """
+        Generate the clinical summary following the exact template and formatting instructions. Do not make up any information.
+        If there is no relevant information for a section, you MUST output the section title (bolded) followed by "Information not provided.".
+        """
     headers = {"Content-Type": "application/json"}
     payload = {
         "inputs": prompt,
