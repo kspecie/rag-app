@@ -61,7 +61,7 @@ def run_embedding_and_storage_pipeline(chunks: list):
     print("Embedding and Storage pipeline complete.")
 
 
-def run_retrieval_and_generation_pipeline(transcribed_conversation: str, additional_content: Optional[str] = None):
+def run_retrieval_and_generation_pipeline(transcribed_conversation: str, additional_content: Optional[str] = None, summary_title: Optional[str] = None):
     """
     Runs the retrieval and generation pipeline: retrieves relevant chunks and generates a summary.
     """
@@ -79,7 +79,13 @@ def run_retrieval_and_generation_pipeline(transcribed_conversation: str, additio
     # 6. Generate Summary
     print("Step 6: Generating summary...")
     print(f"Inside pipeline, received additional_content: {additional_content}")
-    summary = generate_summary(transcribed_conversation, relevant_chunks, os.getenv("TGI_SERVICE_URL"), additional_content=additional_content)
+    summary = generate_summary(
+        transcribed_conversation,
+        relevant_chunks,
+        os.getenv("TGI_SERVICE_URL"),
+        additional_content=additional_content,
+        summary_title=summary_title,
+    )
     if not summary:
         print("Failed to generate summary.")
         return None

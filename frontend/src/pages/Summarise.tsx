@@ -16,9 +16,11 @@ const SummarizePage: React.FC = () => {
   const [displayedText, setDisplayedText] = useState<string>('');
   const [fileName, setFileName] = useState<string | null>(null);
   const [summaryOutput, setSummaryOutput] = useState<string>('');
+  const [summaryId, setSummaryId] = useState<string | null>(null);
   const [isEditingSummary, setIsEditingSummary] = useState<boolean>(false);
   const [editedSummary, setEditedSummary] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [isSavingSummary, setIsSavingSummary] = useState<boolean>(false);
   const [isDragOver, setIsDragOver] = useState<boolean>(false); 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,6 +125,7 @@ const SummarizePage: React.FC = () => {
 
     setLoading(true);
     setSummaryOutput('');
+    setSummaryId(null);
     setIsEditingSummary(false);
     setEditedSummary('');
 
@@ -133,7 +136,7 @@ const SummarizePage: React.FC = () => {
           "Content-Type": "application/json",
           "X-API-Key": API_KEY,
         },
-        body: JSON.stringify({ text: inputText }),
+        body: JSON.stringify({ text: inputText, file_name: fileName ?? undefined }),
       });
 
       if (!response.ok) {
@@ -172,21 +175,44 @@ const SummarizePage: React.FC = () => {
     toast("Edit cancelled.");
   };
 
-  const onClickSaveSummary = () => {
+  const onClickSaveSummary = async () => {
     const trimmed = editedSummary.trim();
     if (!trimmed) {
       toast.error("Summary cannot be empty.");
       return;
     }
-    setSummaryOutput(trimmed);
-    setIsEditingSummary(false);
+    setIsSavingSummary(true);
     try {
-      // Persist locally so the user's edits aren't lost on refresh
-      localStorage.setItem('latestEditedSummary', trimmed);
-    } catch (_) {
-      // Ignore storage errors (e.g., private mode)
+      const response = await fetch("http://localhost:8006/summaries/save/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": API_KEY,
+        },
+        body: JSON.stringify({ id: summaryId ?? undefined, title: fileName || 'Clinical Summary', content: trimmed }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to save summary to database.");
+      }
+      const result = await response.json(); // { id, status }
+      setSummaryId(result.id || null);
+      setSummaryOutput(trimmed);
+      setIsEditingSummary(false);
+      try {
+        localStorage.setItem('latestEditedSummary', trimmed);
+        if (result?.id) localStorage.setItem('latestEditedSummaryId', result.id);
+      } catch (_) {
+        // Ignore storage errors
+      }
+      toast.success("Summary saved to database.");
+    } catch (error: any) {
+      // Fall back to local persistence only
+      try { localStorage.setItem('latestEditedSummary', trimmed); } catch (_) {}
+      toast.error(error?.message || "Failed to save summary.");
+    } finally {
+      setIsSavingSummary(false);
     }
-    toast.success("Summary saved.");
   };
 
   return (
@@ -273,7 +299,7 @@ const SummarizePage: React.FC = () => {
                 {isEditingSummary && (
                   <>
                     <Button variant="secondary" onClick={onClickCancelEdit}>Cancel</Button>
-                    <Button onClick={onClickSaveSummary}>Save</Button>
+                    <Button onClick={onClickSaveSummary} disabled={isSavingSummary}>{isSavingSummary ? 'Saving...' : 'Save'}</Button>
                   </>
                 )}
               </div>
