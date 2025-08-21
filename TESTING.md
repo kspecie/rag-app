@@ -210,3 +210,34 @@ jobs:
 - Check pytest documentation: https://docs.pytest.org/
 - Check Testing Library documentation: https://testing-library.com/
 - Check Vitest documentation: https://vitest.dev/ 
+
+## Integration Tests
+
+- We use pytest markers to distinguish integration tests: `@pytest.mark.integration`.
+- These tests may touch live services (e.g., ChromaDB) running from docker-compose.
+- Tests will self-skip if services are unreachable.
+
+### Run Integration Tests Only
+```bash
+# inside container
+pytest -m integration -v
+```
+
+### Run All Except Integration
+```bash
+pytest -m "not integration" -v
+```
+
+### Example Integration Tests
+- `tests/integration/test_chroma_store_list.py`: direct Chroma client lifecycle
+- `tests/integration/test_api_flow.py`: FastAPI routes with live backing services 
+
+### End-to-End Integration (optional)
+- Gated by env flag `E2E_FULL=1`. Defaults to skipped.
+- Fast mock mode enabled by `E2E_MOCK_MODE=1` (default). Set `0` to hit real TEI/TGI if available.
+
+Run:
+```bash
+# inside container
+E2E_FULL=1 E2E_MOCK_MODE=1 pytest -m integration tests/integration/test_e2e_flow.py -v
+``` 
