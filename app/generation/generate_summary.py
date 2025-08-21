@@ -10,7 +10,8 @@ def generate_summary(
     tgi_service_url: str,
     max_new_tokens: int = 2000,
     temperature: float = 0.2,
-    additional_content: Optional[str] = None 
+    additional_content: Optional[str] = None,
+    summary_title: Optional[str] = None 
 ) -> str:
     """
     Generates a templated clinical summary using the TGI service (Med 42 LLM).
@@ -132,7 +133,7 @@ def generate_summary(
             summary_id = str(uuid.uuid4())
             summary_data = {
                 'id': summary_id,
-                'title': 'Clinical Summary',
+                'title': summary_title or 'Clinical Summary',
                 'content': generated_text
             }
             save_summary_to_db(summary_data)

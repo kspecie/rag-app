@@ -23,6 +23,7 @@ from app.core.pipeline import run_retrieval_and_generation_pipeline
 
 # Import the documents router
 from app.backend.api.documents import router as documents_router
+from app.backend.api.summaries_store import router as summaries_store_router
 
 #import collections router
 from app.backend.api.collections import router as collections_router
@@ -72,6 +73,7 @@ app.add_middleware(
 
 
 app.include_router(documents_router, dependencies=[Depends(get_api_key)])
+app.include_router(summaries_store_router, dependencies=[Depends(get_api_key)])
 app.include_router(collections_router, dependencies=[Depends(get_api_key)])
 
 
@@ -85,6 +87,7 @@ async def read_root():
 # --- Pydantic model for summarization request body ---
 class SummarizeRequest(BaseModel):
     text: str
+    file_name: str | None = None
 
 @app.post("/summaries/generate/", summary="Generate a clinical summary from conversation")
 async def generate_clinical_summary(
@@ -102,7 +105,10 @@ async def generate_clinical_summary(
 
     try:
         # --- Call the run_retrieval_and_generation_pipeline ---
-        summary_result = run_retrieval_and_generation_pipeline(transcribed_conversation)
+        summary_result = run_retrieval_and_generation_pipeline(
+            transcribed_conversation,
+            summary_title=(request.file_name or None)
+        )
         
         if summary_result is None:
             raise HTTPException(
