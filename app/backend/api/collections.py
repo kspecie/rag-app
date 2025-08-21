@@ -55,6 +55,36 @@ def tokenize_and_chunk(text: str, max_tokens: int, overlap: int):
     return chunks
     
 
+@router.get("/")
+def get_collections_metadata() -> Dict[str, Any]:
+    """
+    Get metadata for all collections including last_updated timestamps.
+    """
+    try:
+        collections = chroma_client.list_collections()
+        metadata = {}
+        
+        for collection in collections:
+            try:
+                # Get collection metadata
+                collection_obj = chroma_client.get_collection(name=collection.name)
+                # Try to get last_updated from metadata
+                last_updated = None
+                if hasattr(collection_obj, 'metadata') and collection_obj.metadata:
+                    last_updated = collection_obj.metadata.get('last_updated')
+                
+                metadata[collection.name] = {
+                    'last_updated': last_updated
+                }
+            except Exception as e:
+                print(f"Error getting metadata for collection {collection.name}: {e}")
+                metadata[collection.name] = {'last_updated': None}
+        
+        return metadata
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/update_miriad")
 def update_miriad() -> Dict[str, str]:
     collection_name = "miriad_knowledge"
@@ -92,7 +122,18 @@ def update_miriad() -> Dict[str, str]:
     if current_batch_docs:
         embeddings = tei_embedding_function(current_batch_docs)
         collection.add(documents=current_batch_docs, embeddings=embeddings, ids=current_batch_ids)
-    collection.update(metadata={"last_updated": datetime.utcnow().isoformat()})
+    
+    # Update collection metadata with last_updated timestamp
+    try:
+        # For newer ChromaDB versions, use modify method
+        if hasattr(collection, 'modify'):
+            collection.modify(metadata={"last_updated": datetime.utcnow().isoformat()})
+        else:
+            # Fallback: try to set metadata directly on the collection object
+            collection.metadata = {"last_updated": datetime.utcnow().isoformat()}
+    except Exception as e:
+        print(f"Warning: Could not update collection metadata: {e}")
+        # Continue without failing the entire operation
     
     return {"message": f"Indexing complete! Total chunks added: {document_counter}"}
 
@@ -102,8 +143,24 @@ def refresh_nice_index():
     """Fetch all NICE guidance and store it in ChromaDB."""
     try:
         indexed_docs = index_nice_knowledge()  # calls the API, processes, stores
-        return {"status": "success", "indexed_documents": len(indexed_docs)}
+        try:
+            # Get the collection and update its last_updated metadata
+            collection = chroma_client.get_collection(name="nice_knowledge")
+            
+            # Update collection metadata with last_updated timestamp
+            try:
+                # For newer ChromaDB versions, use modify method
+                if hasattr(collection, 'modify'):
+                    collection.modify(metadata={"last_updated": datetime.utcnow().isoformat()})
+                else:
+                    # Fallback: try to set metadata directly on the collection object
+                    collection.metadata = {"last_updated": datetime.utcnow().isoformat()}
+            except Exception as e:
+                print(f"Warning: Could not update collection metadata: {e}")
+                # Continue without failing the entire operation
+                
+            return {"message": f"Indexing complete! Total chunks added: {len(indexed_docs)}"}
+        except Exception as e:
+            return {"message": f"Indexing complete but failed to update metadata: {str(e)}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    return {"message": f"Indexing complete!"}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { DocumentUploader } from "../components/ui/upload";
 import { Toaster, toast } from 'sonner';
 import {
@@ -26,14 +26,39 @@ interface DataCollection {
 
 const UploadPage: React.FC = () => {
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-    const [lastUpdated, setLastUpdated] = useState<string | null>(null);
     const [otherCollections, setOtherCollections] = useState<DataCollection[]>([
-        { id: 'miriad', name: 'Miriad Knowledge' },
-        { id: 'nice', name: 'NICE Knowledge' },
+        { id: 'miriad_knowledge', name: 'Miriad Knowledge' },
+        { id: 'nice_knowledge', name: 'NICE Knowledge' },
     ]);
 
     const API_BASE = "http://localhost:8006/documents"; //FastAPI URL
     const COLLECTIONS_API = `http://localhost:8006/collections`;
+
+    const fetchCollectionMetadata = useCallback(async () => {
+        try {
+            const res = await fetch(COLLECTIONS_API, {
+                headers: {
+                    "X-API-Key": import.meta.env.VITE_API_KEY
+                }
+            });
+            if (!res.ok) throw new Error("Failed to fetch collections");
+
+            const data = await res.json();
+            console.log("Fetched collections:", data);
+
+            // Map last_updated info into otherCollections
+            setOtherCollections(prevCollections =>
+                prevCollections.map(col => ({
+                    ...col,
+                    lastUpdated: data[col.id]?.last_updated
+                        ? new Date(data[col.id].last_updated).toLocaleDateString()
+                        : "Unknown"
+                }))
+            );
+        } catch (err) {
+            console.error("Error fetching collection metadata:", err);
+        }
+    }, [COLLECTIONS_API]);
 
     //fetch docs on page load
     useEffect(() => {
@@ -45,11 +70,11 @@ const UploadPage: React.FC = () => {
             .then(res => res.json())
             .then(data => {
                 console.log("Fetched docs:", data);
-                const formattedFiles = data.map((doc: any) => ({
+                const formattedFiles = data.map((doc: { id: string; title: string; uploadDate: string }) => ({
                     id: doc.id,
                     title: doc.title,
-                    uploadDate: doc.upload_date
-                        ? new Date(doc.upload_date).toLocaleDateString()
+                    uploadDate: doc.uploadDate
+                        ? new Date(doc.uploadDate).toLocaleDateString()
                         : "Unknown",
                 }));
                 setUploadedFiles(formattedFiles);
@@ -58,37 +83,11 @@ const UploadPage: React.FC = () => {
     }, []);
 
     useEffect(() => {
-      const fetchCollectionMetadata = async () => {
-          try {
-              const res = await fetch(COLLECTIONS_API, {
-                  headers: {
-                      "X-API-Key": import.meta.env.VITE_API_KEY
-                  }
-              });
-              if (!res.ok) throw new Error("Failed to fetch collections");
-  
-              const data = await res.json();
-              console.log("Fetched collections:", data);
-  
-              // Map last_updated info into otherCollections
-              setOtherCollections(prevCollections =>
-                  prevCollections.map(col => ({
-                      ...col,
-                      lastUpdated: data[col.id]?.last_updated
-                          ? new Date(data[col.id].last_updated).toLocaleDateString()
-                          : "Unknown"
-                  }))
-              );
-          } catch (err) {
-              console.error("Error fetching collection metadata:", err);
-          }
-      };
-  
-      fetchCollectionMetadata();
-  }, []);
+        fetchCollectionMetadata();
+    }, [fetchCollectionMetadata]);
   
 
-    const handleUploadSuccess = (fileInfo: any) => {
+    const handleUploadSuccess = (fileInfo: { id?: string; filename?: string; upload_date?: string }) => {
         const newFile: UploadedFile = {
             id: fileInfo.id || new Date().getTime().toString(),
             title: fileInfo.filename || 'Unknown File',
@@ -118,14 +117,27 @@ const UploadPage: React.FC = () => {
                 const err = await res.json();
                 toast.error(err.detail || "Failed to delete collection");
             }
-        } catch (e) {
+        } catch {
             toast.error("Error deleting collection");
         }
     };
 
 const handleDeleteCollectionByName = async (collectionId: string) => {
   if (!window.confirm(`Are you sure you want to delete the ${collectionId} collection? This cannot be undone.`)) return;
-  const endpoint = `${API_BASE}/collections/${collectionId}`;
+  
+  // Map collection IDs to the correct endpoint names
+  const endpointMapping: Record<string, string> = {
+    miriad_knowledge: 'miriad',
+    nice_knowledge: 'nice'
+  };
+  
+  const endpointName = endpointMapping[collectionId];
+  if (!endpointName) {
+    toast.error(`No delete endpoint defined for collection ${collectionId}`);
+    return;
+  }
+  
+  const endpoint = `${API_BASE}/collections/${endpointName}`;
 
   try {
     const res = await fetch(endpoint, {
@@ -136,20 +148,21 @@ const handleDeleteCollectionByName = async (collectionId: string) => {
     });
     if (res.ok) {
       toast.success(`${collectionId} collection deleted successfully`);
-      // You might want to trigger a refresh for the other collections too
+      // Refresh collection metadata after deletion
+      fetchCollectionMetadata();
     } else {
       const err = await res.json();
       toast.error(err.detail || `Failed to delete ${collectionId} collection`);
     }
-  } catch (e) {
+  } catch {
     toast.error(`Error deleting ${collectionId} collection`);
   }
 };
 
 const handleUpdateCollectionByName = async (collectionId: string) => {
   const collectionEndpoints: Record<string, string> = {
-    nice: "update_nice",
-    miriad: "update_miriad",
+    nice_knowledge: "update_nice",
+    miriad_knowledge: "update_miriad",
   };
   const endpointSuffix = collectionEndpoints[collectionId];
   if (!endpointSuffix) {
@@ -172,11 +185,13 @@ const handleUpdateCollectionByName = async (collectionId: string) => {
     });
     if (res.ok){
       toast.success(`${collectionId} collection uploaded successfully`, { id: loadingToastId })
+      // Refresh collection metadata to show updated timestamp
+      fetchCollectionMetadata();
     } else {
       const err = await res.json();
       toast.error(err.detail || `Failed to upload ${collectionId} collection`, { id: loadingToastId })
     }
-  } catch (e) {
+  } catch {
     toast.error(`Error updating ${collectionId} collection`, { id: loadingToastId })
   }
 };
@@ -193,18 +208,6 @@ const handleUpdateCollectionByName = async (collectionId: string) => {
                 onUploadSuccess={handleUploadSuccess}
                 onUploadError={handleUploadError}
             />
-
-            {/*Delete button*/}
-            {uploadedFiles.length > 0 && (
-                <div className="mt-6 flex justify-center">
-                    <Button
-                        variant="destructive"
-                        className="bg-white border border-red-600 text-red-600 hover:bg-red-50"
-                        onClick={handleDeleteCollectionUser}>
-                        Delete All User Documents
-                    </Button>
-                </div>
-            )}
 
             {/* Table Section */}
             {uploadedFiles.length > 0 && (
@@ -229,6 +232,18 @@ const handleUpdateCollectionByName = async (collectionId: string) => {
                 </div>
             )}
 
+            {/*Delete button moved below table but above collections*/}
+            {uploadedFiles.length > 0 && (
+                <div className="mt-6 flex justify-center">
+                    <Button
+                        variant="destructive"
+                        className="bg-white border border-black text-black hover:bg-gray-50"
+                        onClick={handleDeleteCollectionUser}>
+                        Delete All User Documents
+                    </Button>
+                </div>
+            )}
+
             {/* Other Data Collections Section */}
             <div className="mt-12 w-full flex flex-col items-center">
                 <h2 className="text-2xl font-bold mb-4 text-center">Other Data Collections</h2>
@@ -244,7 +259,7 @@ const handleUpdateCollectionByName = async (collectionId: string) => {
                               </p>
                             <div className="flex justify-center gap-4">
                                 <Button
-                                    className="bg-white border border-red-600 text-red-600 hover:bg-red-50"
+                                    className="bg-white border border-black text-black hover:bg-gray-50"
                                     onClick={() => handleDeleteCollectionByName(collection.id)}
                                 >
                                     Delete

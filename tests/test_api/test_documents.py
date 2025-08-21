@@ -99,6 +99,52 @@ def test_delete_user_collection(test_client: TestClient, api_headers, mock_chrom
         assert "deleted" in response.json()["message"]
 
 
+def test_document_metadata_stores_clean_filenames():
+    """Test that document metadata stores clean filenames, not full paths."""
+    from app.data_ingestion.split_and_chunk import split_documents_into_chunks
+    from unittest.mock import MagicMock
+    
+    # Mock a document with file_name set (as the document loader would do)
+    mock_doc = MagicMock()
+    mock_doc.metadata = {
+        "file_name": "document.txt",  # This is what document_loader sets
+        "source": "temp_uploaded_docs/document.txt"  # This might be set elsewhere
+    }
+    mock_doc.page_content = "Test content"
+    
+    # Test that the chunking process cleans up the source field
+    chunks = split_documents_into_chunks([mock_doc])
+    
+    # Verify that source is now just the filename, not the full path
+    assert len(chunks) > 0
+    for chunk in chunks:
+        # Our logic should prioritize file_name over source
+        assert chunk.metadata["source"] == "document.txt"
+        assert "temp_uploaded_docs" not in chunk.metadata["source"]
+
+
+def test_document_metadata_cleans_paths_when_no_file_name():
+    """Test that document metadata cleans paths when file_name is not available."""
+    from app.data_ingestion.split_and_chunk import split_documents_into_chunks
+    from unittest.mock import MagicMock
+    
+    # Mock a document with only source containing a path (no file_name)
+    mock_doc = MagicMock()
+    mock_doc.metadata = {
+        "source": "temp_uploaded_docs/document.txt"  # Only source with path
+    }
+    mock_doc.page_content = "Test content"
+    
+    # Test that the chunking process extracts filename from path
+    chunks = split_documents_into_chunks([mock_doc])
+    
+    # Verify that source is cleaned to just the filename
+    assert len(chunks) > 0
+    for chunk in chunks:
+        assert chunk.metadata["source"] == "document.txt"
+        assert "temp_uploaded_docs" not in chunk.metadata["source"]
+
+
 def test_upload_no_files_returns_400(test_client: TestClient, api_headers):
     response = test_client.post("/documents/upload/", headers=api_headers, files={})
     # FastAPI may raise 422 for missing required form field before handler runs
@@ -107,9 +153,16 @@ def test_upload_no_files_returns_400(test_client: TestClient, api_headers):
 
 def test_upload_documents_happy_path(test_client: TestClient, api_headers, mock_chroma_client):
     # Patch chroma client and ingestion/storage pipelines
+    from unittest.mock import MagicMock
+    
+    # Create proper mock Document objects that our code expects
+    mock_doc = MagicMock()
+    mock_doc.metadata = {"source": "test.txt"}
+    mock_doc.page_content = "test content"
+    
     with (
         patch("app.backend.api.documents.get_client", return_value=mock_chroma_client),
-        patch("app.backend.api.documents.run_ingestion_pipeline", return_value=[{"id": 1}]),
+        patch("app.backend.api.documents.run_ingestion_pipeline", return_value=[mock_doc]),
         patch("app.backend.api.documents.run_embedding_and_storage_pipeline", return_value=None),
     ):
         files = [

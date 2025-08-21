@@ -57,9 +57,14 @@ def split_documents_into_chunks(
             #Preserve all parent metadata
             chunk.metadata = {**doc.metadata, **chunk.metadata}
 
-            # Ensure 'source' is set to filename
-            if "source" not in chunk.metadata and "file_name" in chunk.metadata:
+            # Always ensure 'source' is set to filename (not full path)
+            if "file_name" in chunk.metadata:
                 chunk.metadata["source"] = chunk.metadata["file_name"]
+            else:
+                # Always clean the source field to extract filename from path if needed
+                source = chunk.metadata.get("source", "")
+                if "/" in source or "\\" in source:
+                    chunk.metadata["source"] = source.split("/")[-1].split("\\")[-1]
 
             all_splits.append(chunk)
 

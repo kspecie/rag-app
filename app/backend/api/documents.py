@@ -79,9 +79,19 @@ async def upload_documents(files: List[UploadFile] = File(...)):
             uploaded_file_paths.append(file_path)
             print(f"File '{file.filename}' saved to '{file_path}'")
 
+        # Store upload timestamp to add to metadata later
+        upload_timestamp = datetime.utcnow().isoformat()
+        
         chunks = run_ingestion_pipeline(temp_dir)
         if not chunks:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to process documents into chunks.")
+
+        # Add upload_date to all chunks before storing
+        for chunk in chunks:
+            if hasattr(chunk, 'metadata') and chunk.metadata:
+                chunk.metadata['upload_date'] = upload_timestamp
+            else:
+                chunk.metadata = {'upload_date': upload_timestamp}
 
         run_embedding_and_storage_pipeline(chunks)
 

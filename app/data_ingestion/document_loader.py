@@ -59,6 +59,7 @@ def load_documents(directory_path: str) -> List[Document]:
                 # Inject filename into metadata
                 for doc in docs:
                     doc.metadata["file_name"] = file_path.name
+                    doc.metadata["source"] = file_path.name  # Set source to filename, not full path
                     doc.metadata["upload_date"] = datetime.now().isoformat()
                     loaded_documents.append(doc)
 

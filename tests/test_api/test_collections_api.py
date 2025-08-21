@@ -20,7 +20,7 @@ def test_update_nice_success():
     with patch("app.backend.api.collections.index_nice_knowledge", return_value=[1, 2, 3]):
         response = client.post("/collections/update_nice")
         assert response.status_code == 200
-        assert response.json()["status"] == "success"
+        assert "Indexing complete" in response.json()["message"]
 
 
 def test_update_nice_failure():
@@ -81,5 +81,78 @@ def test_update_miriad_creates_and_indexes():
         response = client.post("/collections/update_miriad")
         assert response.status_code == 200
         assert "Indexing complete" in response.json()["message"]
+
+
+def test_collection_metadata_updates_work_without_crashing():
+    """Test that collection metadata updates work without crashing, even when ChromaDB methods fail."""
+    app = build_app_with_collections_router()
+    client = TestClient(app)
+
+    class MockCollection:
+        def add(self, documents=None, embeddings=None, ids=None):
+            return None
+        def modify(self, metadata=None):
+            # Simulate ChromaDB API that doesn't support modify
+            raise AttributeError("'MockCollection' object has no attribute 'modify'")
+        def update(self, metadata=None):
+            # Simulate ChromaDB API that doesn't support update with metadata
+            raise TypeError("update() got an unexpected keyword argument 'metadata'")
+
+    class MockClient:
+        def get_collection(self, name: str):
+            return MockCollection()
+
+    # Test that nice collection update completes even if metadata update fails
+    with patch("app.backend.api.collections.index_nice_knowledge", return_value=[1, 2, 3]):
+        with patch("app.backend.api.collections.chroma_client", new=MockClient()):
+            response = client.post("/collections/update_nice")
+            # Should still succeed even if metadata update fails
+            assert response.status_code == 200
+            assert "Indexing complete" in response.json()["message"]
+
+
+def test_get_collections_metadata_endpoint():
+    """Test that the new GET /collections endpoint returns the expected format."""
+    app = build_app_with_collections_router()
+    client = TestClient(app)
+
+    class MockCollection:
+        def __init__(self, name: str, metadata: dict = None):
+            self.name = name
+            self.metadata = metadata or {}
+
+    class MockClient:
+        def __init__(self):
+            self.collections = [
+                MockCollection("miriad_knowledge", {"last_updated": "2024-01-01T10:00:00"}),
+                MockCollection("nice_knowledge", {"last_updated": "2024-01-02T11:00:00"}),
+                MockCollection("documents", {}),  # No metadata
+            ]
+        
+        def list_collections(self):
+            return self.collections
+        
+        def get_collection(self, name: str):
+            for col in self.collections:
+                if col.name == name:
+                    return col
+            raise Exception("Collection not found")
+
+    with patch("app.backend.api.collections.chroma_client", new=MockClient()):
+        response = client.get("/collections/")
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert isinstance(data, dict)
+        
+        # Check that all collections are present
+        assert "miriad_knowledge" in data
+        assert "nice_knowledge" in data
+        assert "documents" in data
+        
+        # Check metadata format
+        assert data["miriad_knowledge"]["last_updated"] == "2024-01-01T10:00:00"
+        assert data["nice_knowledge"]["last_updated"] == "2024-01-02T11:00:00"
+        assert data["documents"]["last_updated"] is None  # No metadata set
 
 
