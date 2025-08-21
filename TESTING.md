@@ -1,6 +1,6 @@
 # Testing Guide for RAG Application
 
-This document provides guidance on how to run tests and add new tests to the RAG application.
+This document provides guidance on how to run tests and add new tests to the application.
 
 ## Project Structure
 
@@ -134,76 +134,7 @@ describe('MyComponent', () => {
 - Run `npm run test:coverage` to generate coverage report
 - Coverage report will be displayed in terminal and available in `coverage/` directory
 
-## Best Practices
 
-### General Testing Principles
-
-1. **Arrange-Act-Assert**: Structure tests with setup, execution, and verification
-2. **Test Isolation**: Each test should be independent and not affect others
-3. **Meaningful Names**: Use descriptive test names that explain what is being tested
-4. **Test One Thing**: Each test should verify one specific behavior
-
-### Backend Testing
-
-1. **Use Fixtures**: Define test data and mocks in `conftest.py`
-2. **Mock External Services**: Don't make real API calls or database connections in tests
-3. **Test Edge Cases**: Include tests for error conditions and boundary cases
-4. **Use Parametrized Tests**: Test multiple scenarios with `@pytest.mark.parametrize`
-
-### Frontend Testing
-
-1. **Test User Behavior**: Focus on what users see and do, not implementation details
-2. **Use Data Attributes**: Add `data-testid` attributes to elements you want to test
-3. **Mock API Calls**: Use MSW (Mock Service Worker) or similar for API mocking
-4. **Test Accessibility**: Ensure components are accessible to screen readers
-
-## Continuous Integration
-
-### GitHub Actions Example
-
-```yaml
-name: Tests
-on: [push, pull_request]
-jobs:
-  test-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Run tests
-        run: pytest --cov=app
-
-  test-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '18'
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-      - name: Run tests
-        run: |
-          cd frontend
-          npm run test:run
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Import Errors**: Ensure test files can import from the main application
-2. **Database Connections**: Mock database calls or use test database
-3. **Environment Variables**: Set test environment variables in `conftest.py`
-4. **Async Tests**: Use `@pytest.mark.asyncio` for async test functions
 
 ### Getting Help
 
@@ -211,9 +142,11 @@ jobs:
 - Check Testing Library documentation: https://testing-library.com/
 - Check Vitest documentation: https://vitest.dev/ 
 
+
+
 ## Integration Tests
 
-- We use pytest markers to distinguish integration tests: `@pytest.mark.integration`.
+- Pytest markers to distinguish integration tests: `@pytest.mark.integration`.
 - These tests may touch live services (e.g., ChromaDB) running from docker-compose.
 - Tests will self-skip if services are unreachable.
 
