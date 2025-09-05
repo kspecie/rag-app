@@ -28,7 +28,7 @@ MAX_DOCS_PER_BATCH = 16
 
 router = APIRouter(
     prefix="/collections", # All endpoints in this router will start with /collections
-    tags=["Collections"], # For grouping in Swagger UI
+    tags=["Collections"],
 )
 
 # Initialize Chroma client
@@ -142,14 +142,13 @@ def update_miriad() -> Dict[str, str]:
 def refresh_nice_index():
     """Fetch all NICE guidance and store it in ChromaDB."""
     try:
-        indexed_docs = index_nice_knowledge()  # calls the API, processes, stores
+        indexed_docs = index_nice_knowledge()
         try:
             # Get the collection and update its last_updated metadata
             collection = chroma_client.get_collection(name="nice_knowledge")
             
             # Update collection metadata with last_updated timestamp
             try:
-                # For newer ChromaDB versions, use modify method
                 if hasattr(collection, 'modify'):
                     collection.modify(metadata={"last_updated": datetime.utcnow().isoformat()})
                 else:

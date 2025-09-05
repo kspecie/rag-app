@@ -14,7 +14,7 @@ def store_chunks_in_chroma(
     print(f"Connecting to ChromaDB at {chroma_service_url} and storing chunks...")
 
     try:
-        # Connect to ChromaDB (persistent client)
+        # Connect to ChromaDB 
         client = chromadb.HttpClient(host=chroma_service_url.replace("http://", "").split(":")[0], port=8000)
 
         # Get or create the collection

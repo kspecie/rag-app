@@ -13,7 +13,7 @@ NICE_COLLECTION = "nice_knowledge"
 
 router = APIRouter(
     prefix="/documents", # All endpoints in this router will start with /documents
-    tags=["Documents"], # For grouping in Swagger UI
+    tags=["Documents"], 
 )
 
 CHROMA_HOST = os.getenv("CHROMA_HOST", "chromadb_service")

@@ -29,7 +29,7 @@ def retrieve_relevant_chunks(
                 metric = collection.metadata.get("hnsw:space", "cosine")
             else:
                 metric = "cosine"  # fallback default
-            print(f"📏 Collection '{col.name}' is using distance metric: {metric}")
+            print(f"Collection '{col.name}' is using distance metric: {metric}")
 
             results = collection.query(
                 query_texts=[query],

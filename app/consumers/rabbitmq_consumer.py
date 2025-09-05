@@ -20,7 +20,7 @@ import PyPDF2
 # Import retrieval and generation function
 from app.core.pipeline import run_retrieval_and_generation_pipeline
 
-# --- Configuration (from environment variables) ---
+# --- Configuration ---
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq_service")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
@@ -74,7 +74,7 @@ def fetch_and_extract_text_from_url(file_url: str, conversation_id: str) -> Opti
                 print(f"[{conversation_id}] Failed to extract meaningful text from .pdf.")
         else:
             print(f"[{conversation_id}] Unsupported file type via URL: {file_extension}. Treating as plain text (may fail for binary).")
-            # Fallback for unknown types or if we receive non-PDF/TXT
+            # Fallback for unknown file types
             # This might lead to garbled text for binary files, but handles general web pages.
             extracted_text = response.text
 

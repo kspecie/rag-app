@@ -39,19 +39,6 @@ def generate_summary(
     else:
         context = "No specific external clinical guidelines were returned."
 
-
-    # Construct the prompt for the LLM.
-    # context = "\n".join([chunk["page_content"] for chunk in relevant_knowledge_chunks])
-    # if context: 
-    #     context = f"""
-    #     ---Relevant Clinical Guidelines/Knowledge---
-    #     {context}
-    #     ---End Relevant Clinical Guidelines/Knowledge---
-    #     """
-    # else:
-    #     context = "No specific external clinical guidelines were returned"
-
-
     extra_notes = ""
     if additional_content and additional_content.strip():
         extra_notes = f"\n\n**Additional User Notes:**\n{additional_content.strip()}\n"

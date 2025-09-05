@@ -31,18 +31,6 @@ def load_documents(directory_path: str) -> List[Document]:
 
     loaded_documents = []
 
-    # # Initialize the DirectoryLoader
-    # loader = DirectoryLoader(
-    #     path=directory_path,
-    #     glob="**/*",  # This pattern matches all files recursively
-    #     use_multithreading=True,
-    #     show_progress=True,
-    #     silent_errors=True,
-    # )
-
-    # print(f"Loading documents from: {directory_path}...")
-    # documents = loader.load()
-    # print(f"Loaded {len(documents)} documents.")
 
     # return documents
     print(f"Loading documents from: {directory_path}...")

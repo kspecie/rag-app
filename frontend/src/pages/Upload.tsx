@@ -169,12 +169,9 @@ const handleUpdateCollectionByName = async (collectionId: string) => {
     toast.error(`No update endpoint defined for collection ${collectionId}`);
     return;
   }
-
   const endpoint = `${COLLECTIONS_API}/${endpointSuffix}`;
-  
   // show loading toast
   const loadingToastId = toast.loading(`Updating ${collectionId} collection...This can take several minutes`);
-
   try {
     const res = await fetch(endpoint, {
       method: "POST",

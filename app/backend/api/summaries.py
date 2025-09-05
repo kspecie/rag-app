@@ -3,7 +3,7 @@ from app.core.pipeline import run_retrieval_and_generation_pipeline
 
 router = APIRouter(
     prefix="/summaries", # All endpoints in this router will start with /summaries
-    tags=["Summaries"], # For grouping in Swagger UI
+    tags=["Summaries"], 
 )
 
 @router.post("/generate/")
