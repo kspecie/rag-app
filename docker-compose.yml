@@ -64,14 +64,9 @@ services:
     runtime: habana
     volumes: 
       - /shared/models:/models
-    # volumes: 
-    #     - /shared/models/hub/models--m42-health--Llama3-Med42-70B/snapshots/867064e18aad7bf3f4795f20dcb25a1108952543:/models
-
     environment:
       MODEL_ID: "m42-health/Llama3-Med42-8B" 
       HUGGINGFACE_HUB_CACHE: "/data" 
-      #MODEL_ID: "${TGI_MODEL_PATH}"
-      #MODEL_ID: "."
       NUM_SHARD: 1
       HABANA_VISIBLE_DEVICES: "all"
       OMPI_MCA_btl_vader_single_copy_mechanism: "none"

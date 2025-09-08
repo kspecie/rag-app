@@ -24,12 +24,10 @@ def retrieve_relevant_chunks(
         for col in collections:
             collection = client.get_collection(name=col.name)
 
-            # Detect metric used by this collection safely
             if collection.metadata:
                 metric = collection.metadata.get("hnsw:space", "cosine")
             else:
                 metric = "cosine"  # fallback default
-            print(f"Collection '{col.name}' is using distance metric: {metric}")
 
             results = collection.query(
                 query_texts=[query],

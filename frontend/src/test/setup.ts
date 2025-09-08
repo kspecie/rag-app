@@ -3,6 +3,14 @@
  */
 import '@testing-library/jest-dom'
 
+// Mock environment variables globally
+Object.defineProperty(import.meta, 'env', {
+  value: {
+    VITE_API_KEY: 'test-api-key'
+  },
+  writable: true
+})
+
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
